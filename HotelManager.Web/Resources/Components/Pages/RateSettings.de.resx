@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Add availability rule" xml:space="preserve">
+    <value>Verfügbarkeitsregel hinzufügen</value>
+  </data>
+  <data name="Add room rate rule" xml:space="preserve">
+    <value>Zimmerpreisregel hinzufügen</value>
+  </data>
+  <data name="Availability rule saved." xml:space="preserve">
+    <value>Verfügbarkeitsregel gespeichert.</value>
+  </data>
+  <data name="Availability rules" xml:space="preserve">
+    <value>Verfügbarkeitsregeln</value>
+  </data>
+  <data name="By room type" xml:space="preserve">
+    <value>Nach Zimmertyp</value>
+  </data>
+  <data name="By specific room" xml:space="preserve">
+    <value>Nach konkretem Zimmer</value>
+  </data>
+  <data name="Closed to arrival" xml:space="preserve">
+    <value>Anreise gesperrt</value>
+  </data>
+  <data name="Closed to departure" xml:space="preserve">
+    <value>Abreise gesperrt</value>
+  </data>
+  <data name="Configure room rates and sell restrictions for cloud-ready pricing control." xml:space="preserve">
+    <value>Konfigurieren Sie Zimmerpreise und Verkaufssperren für cloudfähige Preissteuerung.</value>
+  </data>
+  <data name="Constraints" xml:space="preserve">
+    <value>Einschränkungen</value>
+  </data>
+  <data name="From" xml:space="preserve">
+    <value>Von</value>
+  </data>
+  <data name="Loading..." xml:space="preserve">
+    <value>Wird geladen...</value>
+  </data>
+  <data name="Min stay {0} nights" xml:space="preserve">
+    <value>Mindestaufenthalt {0} Nächte</value>
+  </data>
+  <data name="Minimum stay (nights)" xml:space="preserve">
+    <value>Mindestaufenthalt (Nächte)</value>
+  </data>
+  <data name="Net / night" xml:space="preserve">
+    <value>Netto / Nacht</value>
+  </data>
+  <data name="Net / night (EUR)" xml:space="preserve">
+    <value>Netto / Nacht (EUR)</value>
+  </data>
+  <data name="No availability restrictions in this period." xml:space="preserve">
+    <value>Keine Verfügbarkeitseinschränkungen in diesem Zeitraum.</value>
+  </data>
+  <data name="Occupancy" xml:space="preserve">
+    <value>Belegung</value>
+  </data>
+  <data name="Occupancy from" xml:space="preserve">
+    <value>Belegung ab</value>
+  </data>
+  <data name="Occupancy to" xml:space="preserve">
+    <value>Belegung bis</value>
+  </data>
+  <data name="Period" xml:space="preserve">
+    <value>Zeitraum</value>
+  </data>
+  <data name="Priority" xml:space="preserve">
+    <value>Priorität</value>
+  </data>
+  <data name="Rate rule saved." xml:space="preserve">
+    <value>Preisregel gespeichert.</value>
+  </data>
+  <data name="Rate rules" xml:space="preserve">
+    <value>Preisregeln</value>
+  </data>
+  <data name="Rates &amp; availability" xml:space="preserve">
+    <value>Preise &amp; Verfügbarkeit</value>
+  </data>
+  <data name="Room" xml:space="preserve">
+    <value>Zimmer</value>
+  </data>
+  <data name="Room type" xml:space="preserve">
+    <value>Zimmertyp</value>
+  </data>
+  <data name="Room {0}" xml:space="preserve">
+    <value>Zimmer {0}</value>
+  </data>
+  <data name="Room-specific" xml:space="preserve">
+    <value>Zimmerspezifisch</value>
+  </data>
+  <data name="Save availability rule" xml:space="preserve">
+    <value>Verfügbarkeitsregel speichern</value>
+  </data>
+  <data name="Save rate rule" xml:space="preserve">
+    <value>Preisregel speichern</value>
+  </data>
+  <data name="Scope" xml:space="preserve">
+    <value>Geltungsbereich</value>
+  </data>
+  <data name="Show rules active from" xml:space="preserve">
+    <value>Regeln anzeigen ab</value>
+  </data>
+  <data name="Stop sell" xml:space="preserve">
+    <value>Verkauf stoppen</value>
+  </data>
+  <data name="Until (exclusive)" xml:space="preserve">
+    <value>Bis (exklusiv)</value>
+  </data>
+  <data name="VAT" xml:space="preserve">
+    <value>MwSt.</value>
+  </data>
+</root>

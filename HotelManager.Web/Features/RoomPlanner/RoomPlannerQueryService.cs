@@ -5,7 +5,7 @@ namespace HotelManager.Web.Features.RoomPlanner;
 
 public sealed class RoomPlannerQueryService(IDbContextFactory<HotelDbContext> dbContextFactory) : IRoomPlannerQueryService
 {
-    private const int MaxDaysInWindow = 31;
+    private const int MaxDaysInWindow = 92;
 
     public async Task<RoomPlannerSnapshot> GetSnapshotAsync(DateOnly startDate, int days, CancellationToken cancellationToken)
     {
@@ -16,6 +16,7 @@ public sealed class RoomPlannerQueryService(IDbContextFactory<HotelDbContext> db
 
         var rooms = await dbContext.Rooms
             .AsNoTracking()
+            .Where(room => room.IsActive)
             .OrderBy(room => room.Floor)
             .ThenBy(room => room.Number)
             .Select(room => new RoomPlannerRoom(
@@ -38,7 +39,13 @@ public sealed class RoomPlannerQueryService(IDbContextFactory<HotelDbContext> db
                         reservation.Occupancy,
                         reservation.Status,
                         reservation.Notes))
-                    .ToList()))
+                    .ToList(),
+                room.HousekeepingStatus,
+                room.Features,
+                dbContext.RoomCategories
+                    .Where(category => category.Name == room.Type)
+                    .Select(category => category.MaxOccupancy)
+                    .FirstOrDefault()))
             .ToListAsync(cancellationToken);
 
         return new RoomPlannerSnapshot(startDate, normalizedDays, rooms);

@@ -1,0 +1,820 @@
+@page "/settings/rooms"
+@rendermode InteractiveServer
+@inject IRoomInventoryService Inventory
+@inject IJSRuntime JS
+@inject IStringLocalizer<RoomSettings> L
+
+<PageTitle>@L["Rooms & categories"]</PageTitle>
+
+<div class="settings-page" @onkeydown="OnPageKeyDown">
+    <header class="settings-header">
+        <div>
+            <h1>@L["Rooms & categories"]</h1>
+            <p class="settings-subtitle">@L["Maintain your room inventory and the categories used for rates, availability and occupancy limits."]</p>
+        </div>
+        <div class="settings-actions">
+            @if (activeTab == SettingsTab.Rooms)
+            {
+                <button type="button" class="btn btn-outline-primary" @onclick="OpenNewSeries" disabled="@(categories.Count == 0)">@L["+ Add room series"]</button>
+                <button type="button" class="btn btn-primary" @onclick="OpenNewRoom" disabled="@(categories.Count == 0)">@L["+ New room"]</button>
+            }
+            else
+            {
+                <button type="button" class="btn btn-primary" @onclick="OpenNewCategory">@L["+ New category"]</button>
+            }
+        </div>
+    </header>
+
+    @if (pageError is not null)
+    {
+        <div class="alert alert-danger" role="alert">@pageError</div>
+    }
+    else if (successMessage is not null)
+    {
+        <div class="alert alert-success" role="status">@successMessage</div>
+    }
+
+    <nav class="settings-tabs" role="tablist">
+        <button type="button" role="tab" class="settings-tab @(activeTab == SettingsTab.Rooms ? "active" : null)" aria-selected="@(activeTab == SettingsTab.Rooms)" @onclick="ShowRoomsTab">
+            @L["Rooms"] <span class="rule-count">@rooms.Count(room => room.IsActive)</span>
+        </button>
+        <button type="button" role="tab" class="settings-tab @(activeTab == SettingsTab.Categories ? "active" : null)" aria-selected="@(activeTab == SettingsTab.Categories)" @onclick="ShowCategoriesTab">
+            @L["Room categories"] <span class="rule-count">@categories.Count</span>
+            @if (CategoriesWithoutRates > 0)
+            {
+                <span class="tab-warning" title="@L["Categories without an active rate rule"]">!</span>
+            }
+        </button>
+    </nav>
+
+    @if (isLoading)
+    {
+        <p><em>@L["Loading..."]</em></p>
+    }
+    else if (activeTab == SettingsTab.Rooms)
+    {
+        <section class="inventory-card">
+            <div class="inventory-toolbar">
+                <input type="search" class="form-control" placeholder="@L["Search number, category or feature..."]" @bind="roomSearch" @bind:event="oninput" aria-label="@L["Search rooms"]" />
+                <select class="form-select" @bind="categoryFilter" aria-label="@L["Filter by category"]">
+                    <option value="">@L["All categories"]</option>
+                    @foreach (var category in categories)
+                    {
+                        <option value="@category.Name">@category.Name</option>
+                    }
+                </select>
+                <select class="form-select" @bind="statusFilter" aria-label="@L["Filter by status"]">
+                    <option value="@RoomStatusFilter.Active">@L["Active"]</option>
+                    <option value="@RoomStatusFilter.Archived">@L["Archived"]</option>
+                    <option value="@RoomStatusFilter.All">@L["All"]</option>
+                </select>
+            </div>
+
+            @if (FilteredRooms.Count == 0)
+            {
+                <p class="empty-hint">@L["No rooms match the current filter."]</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover inventory-table">
+                        <thead>
+                            <tr>
+                                <th>@L["Room"]</th>
+                                <th>@L["Category"]</th>
+                                <th class="text-end">@L["Floor"]</th>
+                                <th class="text-end">@L["Max guests"]</th>
+                                <th>@L["Features"]</th>
+                                <th>@L["Housekeeping"]</th>
+                                <th class="text-end">@L["Upcoming"]</th>
+                                <th>@L["Status"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var room in FilteredRooms)
+                            {
+                                <tr class="inventory-row @(room.IsActive ? null : "archived") @(selectedRoomId == room.RoomId ? "selected" : null)" @onclick="() => OpenRoom(room)">
+                                    <td><strong>@room.Number</strong></td>
+                                    <td>@room.Category</td>
+                                    <td class="text-end">@room.Floor</td>
+                                    <td class="text-end">@(room.MaxOccupancy > 0 ? room.MaxOccupancy : "–")</td>
+                                    <td>
+                                        @foreach (var feature in RoomInventoryService.SplitFeatures(room.Features))
+                                        {
+                                            <span class="feature-chip">@feature</span>
+                                        }
+                                    </td>
+                                    <td><span class="hk-dot hk-@room.HousekeepingStatus.ToString().ToLowerInvariant()"></span> @HousekeepingLabel(room.HousekeepingStatus)</td>
+                                    <td class="text-end">@room.UpcomingReservations</td>
+                                    <td>
+                                        @if (room.IsActive)
+                                        {
+                                            <span class="status-badge active">@L["Active"]</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-badge archived">@L["Archived"]</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+    }
+    else
+    {
+        <section class="inventory-card">
+            @if (categories.Count == 0)
+            {
+                <p class="empty-hint">@L["No room categories yet. Create a category before adding rooms."]</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover inventory-table">
+                        <thead>
+                            <tr>
+                                <th>@L["Code"]</th>
+                                <th>@L["Name"]</th>
+                                <th class="text-end">@L["Standard / max guests"]</th>
+                                <th class="text-end">@L["Rooms (active / total)"]</th>
+                                <th>@L["Active rates"]</th>
+                                <th>@L["Description"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var category in categories)
+                            {
+                                <tr class="inventory-row @(selectedCategoryId == category.CategoryId ? "selected" : null)" @onclick="() => OpenCategory(category)">
+                                    <td><span class="category-code">@category.Code</span></td>
+                                    <td><strong>@category.Name</strong></td>
+                                    <td class="text-end">@category.StandardOccupancy / @category.MaxOccupancy</td>
+                                    <td class="text-end">@category.ActiveRoomCount / @category.RoomCount</td>
+                                    <td>
+                                        @if (category.ActiveRateRuleCount == 0)
+                                        {
+                                            <a class="status-badge warning" href="settings/rates" @onclick:stopPropagation="true">@L["No rate – set up"]</a>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-badge active">@category.ActiveRateRuleCount</span>
+                                        }
+                                    </td>
+                                    <td class="text-muted description-cell">@category.Description</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </section>
+    }
+</div>
+
+@if (drawer != DrawerMode.None)
+{
+    <div class="drawer-backdrop" @onclick="CloseDrawer"></div>
+    <aside class="inventory-drawer" tabindex="-1" @ref="drawerElement" role="dialog" aria-modal="true" aria-label="@DrawerTitle" @onkeydown="OnPageKeyDown">
+        <header class="inventory-drawer-header">
+            <h2>@DrawerTitle</h2>
+            <button type="button" class="btn-close" aria-label="@L["Close"]" @onclick="CloseDrawer" disabled="@isSaving"></button>
+        </header>
+
+        <div class="inventory-drawer-body">
+            @if (drawerError is not null)
+            {
+                <div class="alert alert-danger" role="alert">@drawerError</div>
+            }
+
+            @if (drawer == DrawerMode.Room)
+            {
+                <div class="form-grid">
+                    <label>
+                        <span>@L["Room number"]</span>
+                        <input class="form-control" @bind="roomForm.Number" @bind:event="oninput" maxlength="12" autofocus />
+                    </label>
+                    <label>
+                        <span>@L["Floor"]</span>
+                        <input type="number" class="form-control" @bind="roomForm.Floor" min="-5" max="200" />
+                    </label>
+                    <label class="span-2">
+                        <span>@L["Category"]</span>
+                        <select class="form-select" @bind="roomForm.Category">
+                            @foreach (var category in categories)
+                            {
+                                <option value="@category.Name">@CategoryOptionLabel(category)</option>
+                            }
+                        </select>
+                    </label>
+                    <label class="span-2">
+                        <span>@L["Housekeeping"]</span>
+                        <select class="form-select" @bind="roomForm.HousekeepingStatus">
+                            @foreach (var status in Enum.GetValues<HousekeepingStatus>())
+                            {
+                                <option value="@status">@HousekeepingLabel(status)</option>
+                            }
+                        </select>
+                    </label>
+                    @RenderFeatureEditor(roomForm)
+                    <label class="span-2">
+                        <span>@L["Internal notes"]</span>
+                        <textarea class="form-control" rows="3" maxlength="500" @bind="roomForm.Notes" placeholder="@L["e.g. Faces the street, extra bed possible"]"></textarea>
+                    </label>
+                </div>
+
+                @if (EditingRoom is { } editing)
+                {
+                    <div class="drawer-stats">
+                        <div><strong>@editing.UpcomingReservations</strong><span>@L["Upcoming reservations"]</span></div>
+                        <div><strong>@editing.TotalReservations</strong><span>@L["Reservations in total"]</span></div>
+                    </div>
+                    <section class="danger-zone">
+                        <h3>@L["Lifecycle"]</h3>
+                        <p>@L["Archived rooms disappear from the room planner but keep their history. Only rooms that were never booked can be deleted."]</p>
+                        <div class="danger-actions">
+                            @if (editing.IsActive)
+                            {
+                                <button type="button" class="btn btn-outline-secondary btn-sm" @onclick="() => SetRoomActiveAsync(editing, false)" disabled="@isSaving">@L["Archive room"]</button>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn btn-outline-success btn-sm" @onclick="() => SetRoomActiveAsync(editing, true)" disabled="@isSaving">@L["Reactivate room"]</button>
+                            }
+                            <button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => DeleteRoomAsync(editing)" disabled="@(isSaving || editing.TotalReservations > 0)" title="@DeleteRoomHint(editing)">@L["Delete room"]</button>
+                        </div>
+                    </section>
+                }
+            }
+            else if (drawer == DrawerMode.Series)
+            {
+                <p class="drawer-hint">@L["Create several rooms of the same category at once, e.g. a new floor."]</p>
+                <div class="form-grid">
+                    <label>
+                        <span>@L["From number"]</span>
+                        <input type="number" class="form-control" @bind="seriesForm.FromNumber" @bind:event="oninput" min="0" />
+                    </label>
+                    <label>
+                        <span>@L["To number"]</span>
+                        <input type="number" class="form-control" @bind="seriesForm.ToNumber" @bind:event="oninput" min="0" />
+                    </label>
+                    <label>
+                        <span>@L["Prefix (optional)"]</span>
+                        <input class="form-control" @bind="seriesForm.Prefix" @bind:event="oninput" maxlength="4" placeholder="@L["e.g. A"]" />
+                    </label>
+                    <label>
+                        <span>@L["Floor"]</span>
+                        <input type="number" class="form-control" @bind="seriesForm.Floor" min="-5" max="200" />
+                    </label>
+                    <label class="span-2">
+                        <span>@L["Category"]</span>
+                        <select class="form-select" @bind="seriesForm.Category">
+                            @foreach (var category in categories)
+                            {
+                                <option value="@category.Name">@CategoryOptionLabel(category)</option>
+                            }
+                        </select>
+                    </label>
+                    @RenderFeatureEditor(seriesForm)
+                </div>
+                <div class="series-preview">
+                    <span class="series-preview-label">@L["Preview"]</span>
+                    @if (SeriesPreview is { Count: > 0 } preview)
+                    {
+                        <span>@L["{0} room(s):", SeriesCount] @string.Join(", ", preview)@(SeriesCount > preview.Count ? ", …" : null)</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted">@L["Enter a valid number range (max. {0} rooms).", RoomInventoryService.MaxSeriesSize]</span>
+                    }
+                </div>
+            }
+            else if (drawer == DrawerMode.Category)
+            {
+                <div class="form-grid">
+                    <label>
+                        <span>@L["Code"]</span>
+                        <input class="form-control" @bind="categoryForm.Code" @bind:event="oninput" maxlength="10" placeholder="@L["e.g. DLX"]" />
+                    </label>
+                    <label>
+                        <span>@L["Sort order"]</span>
+                        <input type="number" class="form-control" @bind="categoryForm.SortOrder" />
+                    </label>
+                    <label class="span-2">
+                        <span>@L["Name"]</span>
+                        <input class="form-control" @bind="categoryForm.Name" @bind:event="oninput" maxlength="40" placeholder="@L["e.g. Deluxe King"]" />
+                    </label>
+                    <label>
+                        <span>@L["Standard occupancy"]</span>
+                        <input type="number" class="form-control" @bind="categoryForm.StandardOccupancy" min="1" max="@RoomInventoryService.MaxOccupancyLimit" />
+                    </label>
+                    <label>
+                        <span>@L["Max. occupancy"]</span>
+                        <input type="number" class="form-control" @bind="categoryForm.MaxOccupancy" min="1" max="@RoomInventoryService.MaxOccupancyLimit" />
+                    </label>
+                    <label class="span-2">
+                        <span>@L["Description"]</span>
+                        <textarea class="form-control" rows="3" maxlength="500" @bind="categoryForm.Description"></textarea>
+                    </label>
+                </div>
+
+                @if (EditingCategory is { } editingCategory)
+                {
+                    <p class="drawer-hint">@L["Renaming a category also updates its rooms, rate rules and availability rules."]</p>
+                    <div class="drawer-stats">
+                        <div><strong>@editingCategory.ActiveRoomCount / @editingCategory.RoomCount</strong><span>@L["Rooms (active / total)"]</span></div>
+                        <div><strong>@editingCategory.ActiveRateRuleCount</strong><span>@L["Active rates"]</span></div>
+                    </div>
+                    <section class="danger-zone">
+                        <h3>@L["Delete category"]</h3>
+                        <p>@L["A category can only be deleted when no rooms use it. Its rate and availability rules are deleted as well."]</p>
+                        <div class="danger-actions">
+                            <button type="button" class="btn btn-outline-danger btn-sm" @onclick="() => DeleteCategoryAsync(editingCategory)" disabled="@(isSaving || editingCategory.RoomCount > 0)">@L["Delete category"]</button>
+                        </div>
+                    </section>
+                }
+            }
+        </div>
+
+        <footer class="inventory-drawer-footer">
+            <button type="button" class="btn btn-outline-secondary" @onclick="CloseDrawer" disabled="@isSaving">@L["Cancel"]</button>
+            <button type="button" class="btn btn-primary" @onclick="SaveDrawerAsync" disabled="@(isSaving || !CanSave)">
+                @(isSaving ? L["Saving..."] : SaveLabel)
+            </button>
+        </footer>
+    </aside>
+}
+
+@code {
+    private static readonly string[] SuggestedFeatures =
+    [
+        "Balcony", "Sea view", "Accessible", "Non-smoking", "Connecting door", "Bathtub", "Kitchenette"
+    ];
+
+    private enum SettingsTab { Rooms, Categories }
+
+    private enum DrawerMode { None, Room, Series, Category }
+
+    private enum RoomStatusFilter { Active, Archived, All }
+
+    [SupplyParameterFromQuery(Name = "room")]
+    public Guid? RoomQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "tab")]
+    public string? TabQuery { get; set; }
+
+    private IReadOnlyList<RoomInventoryItem> rooms = [];
+    private IReadOnlyList<RoomCategoryItem> categories = [];
+    private SettingsTab activeTab = SettingsTab.Rooms;
+    private DrawerMode drawer = DrawerMode.None;
+    private RoomStatusFilter statusFilter = RoomStatusFilter.Active;
+    private string roomSearch = string.Empty;
+    private string categoryFilter = string.Empty;
+    private bool isLoading = true;
+    private bool isSaving;
+    private bool queryHandled;
+    private string? pageError;
+    private string? drawerError;
+    private string? successMessage;
+    private Guid? selectedRoomId;
+    private Guid? selectedCategoryId;
+    private RoomFormModel roomForm = new();
+    private SeriesFormModel seriesForm = new();
+    private CategoryFormModel categoryForm = new();
+    private ElementReference drawerElement;
+    private bool focusDrawer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.Equals(TabQuery, "categories", StringComparison.OrdinalIgnoreCase))
+        {
+            activeTab = SettingsTab.Categories;
+        }
+
+        await ReloadAsync();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (queryHandled || isLoading || RoomQuery is not { } roomId)
+        {
+            return;
+        }
+
+        queryHandled = true;
+        if (rooms.FirstOrDefault(room => room.RoomId == roomId) is { } room)
+        {
+            activeTab = SettingsTab.Rooms;
+            if (!room.IsActive)
+            {
+                statusFilter = RoomStatusFilter.All;
+            }
+
+            OpenRoom(room);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (focusDrawer && drawer != DrawerMode.None)
+        {
+            focusDrawer = false;
+            await drawerElement.FocusAsync();
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        try
+        {
+            rooms = await Inventory.GetRoomsAsync(CancellationToken.None);
+            categories = await Inventory.GetCategoriesAsync(CancellationToken.None);
+            pageError = null;
+        }
+        catch (Exception exception)
+        {
+            pageError = exception.Message;
+        }
+        finally
+        {
+            if (isLoading)
+            {
+                isLoading = false;
+                OnParametersSet();
+            }
+        }
+    }
+
+    private int CategoriesWithoutRates => categories.Count(category => category.ActiveRateRuleCount == 0);
+
+    private IReadOnlyList<RoomInventoryItem> FilteredRooms
+    {
+        get
+        {
+            var search = roomSearch.Trim();
+            return rooms
+                .Where(room => statusFilter switch
+                {
+                    RoomStatusFilter.Active => room.IsActive,
+                    RoomStatusFilter.Archived => !room.IsActive,
+                    _ => true
+                })
+                .Where(room => categoryFilter.Length == 0
+                    || string.Equals(room.Category, categoryFilter, StringComparison.OrdinalIgnoreCase))
+                .Where(room => search.Length == 0
+                    || room.Number.Contains(search, StringComparison.OrdinalIgnoreCase)
+                    || room.Category.Contains(search, StringComparison.OrdinalIgnoreCase)
+                    || (room.Features?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false))
+                .ToList();
+        }
+    }
+
+    private RoomInventoryItem? EditingRoom =>
+        selectedRoomId is { } id ? rooms.FirstOrDefault(room => room.RoomId == id) : null;
+
+    private RoomCategoryItem? EditingCategory =>
+        selectedCategoryId is { } id ? categories.FirstOrDefault(category => category.CategoryId == id) : null;
+
+    private string DrawerTitle => drawer switch
+    {
+        DrawerMode.Room when EditingRoom is { } room => L["Room {0}", room.Number],
+        DrawerMode.Room => L["New room"],
+        DrawerMode.Series => L["Add room series"],
+        DrawerMode.Category when EditingCategory is { } category => category.Name,
+        DrawerMode.Category => L["New category"],
+        _ => string.Empty
+    };
+
+    private string SaveLabel => drawer switch
+    {
+        DrawerMode.Series => L["Create {0} room(s)", SeriesCount],
+        DrawerMode.Room when EditingRoom is null => L["Create room"],
+        DrawerMode.Category when EditingCategory is null => L["Create category"],
+        _ => L["Save changes"]
+    };
+
+    private bool CanSave => drawer switch
+    {
+        DrawerMode.Room => !string.IsNullOrWhiteSpace(roomForm.Number) && !string.IsNullOrWhiteSpace(roomForm.Category),
+        DrawerMode.Series => SeriesCount is > 0 and <= RoomInventoryService.MaxSeriesSize && !string.IsNullOrWhiteSpace(seriesForm.Category),
+        DrawerMode.Category => !string.IsNullOrWhiteSpace(categoryForm.Code) && !string.IsNullOrWhiteSpace(categoryForm.Name),
+        _ => false
+    };
+
+    private int SeriesCount => seriesForm.ToNumber >= seriesForm.FromNumber && seriesForm.FromNumber >= 0
+        ? seriesForm.ToNumber - seriesForm.FromNumber + 1
+        : 0;
+
+    private IReadOnlyList<string>? SeriesPreview => SeriesCount is > 0 and <= RoomInventoryService.MaxSeriesSize
+        ? Enumerable.Range(seriesForm.FromNumber, Math.Min(SeriesCount, 8))
+            .Select(number => $"{seriesForm.Prefix?.Trim()}{number}")
+            .ToList()
+        : null;
+
+    private string CategoryOptionLabel(RoomCategoryItem category) =>
+        L["{0} ({1}, max. {2} guests)", category.Name, category.Code, category.MaxOccupancy];
+
+    private string HousekeepingLabel(HousekeepingStatus status) => status switch
+    {
+        HousekeepingStatus.Dirty => L["Dirty"],
+        HousekeepingStatus.Inspected => L["Inspected"],
+        _ => L["Clean"]
+    };
+
+    private string? DeleteRoomHint(RoomInventoryItem room) =>
+        room.TotalReservations > 0 ? L["Rooms with reservation history cannot be deleted. Archive it instead."].Value : null;
+
+    private RenderFragment RenderFeatureEditor(IFeatureForm form) => __builder =>
+    {
+        <label class="span-2">
+            <span>@L["Features"]</span>
+            <input class="form-control" @bind="form.Features" @bind:event="oninput" maxlength="300" placeholder="@L["Comma separated, e.g. Balcony, Sea view"]" />
+        </label>
+        <div class="span-2 feature-suggestions">
+            @foreach (var feature in SuggestedFeatures)
+            {
+                var isSelected = HasFeature(form, feature);
+                <button type="button" class="feature-chip selectable @(isSelected ? "selected" : null)" aria-pressed="@isSelected" @onclick="() => ToggleFeature(form, feature)">
+                    @(isSelected ? "✓ " : "+ ")@L[feature]
+                </button>
+            }
+        </div>
+    };
+
+    private static bool HasFeature(IFeatureForm form, string feature) =>
+        RoomInventoryService.SplitFeatures(form.Features).Contains(feature, StringComparer.OrdinalIgnoreCase);
+
+    private static void ToggleFeature(IFeatureForm form, string feature)
+    {
+        var features = RoomInventoryService.SplitFeatures(form.Features).ToList();
+        var existing = features.FindIndex(item => string.Equals(item, feature, StringComparison.OrdinalIgnoreCase));
+        if (existing >= 0)
+        {
+            features.RemoveAt(existing);
+        }
+        else
+        {
+            features.Add(feature);
+        }
+
+        form.Features = string.Join(", ", features);
+    }
+
+    private void ShowRoomsTab()
+    {
+        activeTab = SettingsTab.Rooms;
+        CloseDrawer();
+    }
+
+    private void ShowCategoriesTab()
+    {
+        activeTab = SettingsTab.Categories;
+        CloseDrawer();
+    }
+
+    private void OpenNewRoom()
+    {
+        var lastRoom = rooms.Where(room => room.IsActive).OrderBy(room => room.Floor).ThenBy(room => room.Number).LastOrDefault();
+        roomForm = new RoomFormModel
+        {
+            Category = lastRoom?.Category ?? categories.FirstOrDefault()?.Name ?? string.Empty,
+            Floor = lastRoom?.Floor ?? 1
+        };
+        OpenDrawer(DrawerMode.Room);
+    }
+
+    private void OpenRoom(RoomInventoryItem room)
+    {
+        roomForm = new RoomFormModel
+        {
+            Number = room.Number,
+            Category = room.Category,
+            Floor = room.Floor,
+            Features = room.Features,
+            Notes = room.Notes,
+            HousekeepingStatus = room.HousekeepingStatus
+        };
+        OpenDrawer(DrawerMode.Room, roomId: room.RoomId);
+    }
+
+    private void OpenNewSeries()
+    {
+        var nextFloor = rooms.Count == 0 ? 1 : rooms.Max(room => room.Floor) + 1;
+        seriesForm = new SeriesFormModel
+        {
+            Floor = nextFloor,
+            FromNumber = nextFloor * 100 + 1,
+            ToNumber = nextFloor * 100 + 5,
+            Category = categories.FirstOrDefault()?.Name ?? string.Empty
+        };
+        OpenDrawer(DrawerMode.Series);
+    }
+
+    private void OpenNewCategory()
+    {
+        categoryForm = new CategoryFormModel
+        {
+            SortOrder = categories.Count == 0 ? 10 : categories.Max(category => category.SortOrder) + 10
+        };
+        OpenDrawer(DrawerMode.Category);
+    }
+
+    private void OpenCategory(RoomCategoryItem category)
+    {
+        categoryForm = new CategoryFormModel
+        {
+            Code = category.Code,
+            Name = category.Name,
+            Description = category.Description,
+            StandardOccupancy = category.StandardOccupancy,
+            MaxOccupancy = category.MaxOccupancy,
+            SortOrder = category.SortOrder
+        };
+        OpenDrawer(DrawerMode.Category, categoryId: category.CategoryId);
+    }
+
+    private void OpenDrawer(DrawerMode mode, Guid? roomId = null, Guid? categoryId = null)
+    {
+        drawer = mode;
+        focusDrawer = true;
+        selectedRoomId = roomId;
+        selectedCategoryId = categoryId;
+        drawerError = null;
+        successMessage = null;
+    }
+
+    private void CloseDrawer()
+    {
+        if (isSaving)
+        {
+            return;
+        }
+
+        drawer = DrawerMode.None;
+        selectedRoomId = null;
+        selectedCategoryId = null;
+        drawerError = null;
+    }
+
+    private void OnPageKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape" && drawer != DrawerMode.None)
+        {
+            CloseDrawer();
+        }
+    }
+
+    private async Task SaveDrawerAsync()
+    {
+        await RunAsync(async () =>
+        {
+            switch (drawer)
+            {
+                case DrawerMode.Room:
+                    var roomRequest = new RoomUpsertRequest(
+                        roomForm.Number,
+                        roomForm.Category,
+                        roomForm.Floor,
+                        roomForm.Features,
+                        roomForm.Notes,
+                        roomForm.HousekeepingStatus);
+                    var saved = EditingRoom is { } room
+                        ? await Inventory.UpdateRoomAsync(room.RoomId, roomRequest, CancellationToken.None)
+                        : await Inventory.CreateRoomAsync(roomRequest, CancellationToken.None);
+                    return EditingRoom is null ? L["Room {0} created.", saved.Number] : L["Room {0} saved.", saved.Number];
+
+                case DrawerMode.Series:
+                    var created = await Inventory.CreateRoomSeriesAsync(
+                        new RoomSeriesRequest(
+                            seriesForm.FromNumber,
+                            seriesForm.ToNumber,
+                            seriesForm.Category,
+                            seriesForm.Floor,
+                            seriesForm.Features,
+                            seriesForm.Prefix),
+                        CancellationToken.None);
+                    return L["{0} room(s) created.", created.Count];
+
+                case DrawerMode.Category:
+                    var categoryRequest = new RoomCategoryUpsertRequest(
+                        categoryForm.Code,
+                        categoryForm.Name,
+                        categoryForm.Description,
+                        categoryForm.StandardOccupancy,
+                        categoryForm.MaxOccupancy,
+                        categoryForm.SortOrder);
+                    var savedCategory = EditingCategory is { } category
+                        ? await Inventory.UpdateCategoryAsync(category.CategoryId, categoryRequest, CancellationToken.None)
+                        : await Inventory.CreateCategoryAsync(categoryRequest, CancellationToken.None);
+                    return EditingCategory is null
+                        ? L["Category {0} created.", savedCategory.Name]
+                        : L["Category {0} saved.", savedCategory.Name];
+
+                default:
+                    return string.Empty;
+            }
+        });
+    }
+
+    private async Task SetRoomActiveAsync(RoomInventoryItem room, bool isActive)
+    {
+        await RunAsync(async () =>
+        {
+            await Inventory.SetRoomActiveAsync(room.RoomId, isActive, CancellationToken.None);
+            return isActive ? L["Room {0} reactivated.", room.Number] : L["Room {0} archived.", room.Number];
+        });
+    }
+
+    private async Task DeleteRoomAsync(RoomInventoryItem room)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", L["Delete room {0} permanently?", room.Number].Value))
+        {
+            return;
+        }
+
+        await RunAsync(async () =>
+        {
+            await Inventory.DeleteRoomAsync(room.RoomId, CancellationToken.None);
+            return L["Room {0} deleted.", room.Number];
+        });
+    }
+
+    private async Task DeleteCategoryAsync(RoomCategoryItem category)
+    {
+        var message = L["Delete category {0}? Its rate and availability rules will be deleted as well.", category.Name].Value;
+        if (!await JS.InvokeAsync<bool>("confirm", message))
+        {
+            return;
+        }
+
+        await RunAsync(async () =>
+        {
+            await Inventory.DeleteCategoryAsync(category.CategoryId, CancellationToken.None);
+            return L["Category {0} deleted.", category.Name];
+        });
+    }
+
+    private async Task RunAsync(Func<Task<string>> operation)
+    {
+        isSaving = true;
+        drawerError = null;
+        try
+        {
+            successMessage = await operation();
+            isSaving = false;
+            CloseDrawer();
+            await ReloadAsync();
+        }
+        catch (Exception exception) when (exception is ReservationValidationException
+                                              or ReservationConflictException
+                                              or ReservationNotFoundException)
+        {
+            drawerError = exception.Message;
+        }
+        catch (Exception exception)
+        {
+            drawerError = L["The change could not be saved: {0}", exception.Message];
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private interface IFeatureForm
+    {
+        string? Features { get; set; }
+    }
+
+    private sealed class RoomFormModel : IFeatureForm
+    {
+        public string Number { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public int Floor { get; set; } = 1;
+        public string? Features { get; set; }
+        public string? Notes { get; set; }
+        public HousekeepingStatus HousekeepingStatus { get; set; } = HousekeepingStatus.Clean;
+    }
+
+    private sealed class SeriesFormModel : IFeatureForm
+    {
+        public int FromNumber { get; set; }
+        public int ToNumber { get; set; }
+        public string? Prefix { get; set; }
+        public string Category { get; set; } = string.Empty;
+        public int Floor { get; set; } = 1;
+        public string? Features { get; set; }
+    }
+
+    private sealed class CategoryFormModel
+    {
+        public string Code { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public int StandardOccupancy { get; set; } = 2;
+        public int MaxOccupancy { get; set; } = 2;
+        public int SortOrder { get; set; }
+    }
+}

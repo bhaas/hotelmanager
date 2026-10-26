@@ -54,4 +54,13 @@
   <data name="No room rate is configured for the requested stay." xml:space="preserve">
     <value>Für den gewünschten Aufenthalt ist kein Zimmerpreis konfiguriert.</value>
   </data>
+  <data name="Unknown housekeeping status." xml:space="preserve">
+    <value>Unbekannter Housekeeping-Status.</value>
+  </data>
+  <data name="Room {0} allows at most {1} guest(s)." xml:space="preserve">
+    <value>Zimmer {0} erlaubt höchstens {1} Gast/Gäste.</value>
+  </data>
+  <data name="Room {0} is archived and cannot be booked." xml:space="preserve">
+    <value>Zimmer {0} ist archiviert und kann nicht gebucht werden.</value>
+  </data>
 </root>

@@ -72,4 +72,7 @@
   <data name="No room rate is configured for {0}." xml:space="preserve">
     <value>Für {0} ist kein Zimmerpreis konfiguriert.</value>
   </data>
+  <data name="Room category {0} does not exist." xml:space="preserve">
+    <value>Zimmerkategorie {0} existiert nicht.</value>
+  </data>
 </root>

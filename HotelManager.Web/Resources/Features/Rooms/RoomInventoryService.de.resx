@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="A series can contain at most {0} rooms." xml:space="preserve">
+    <value>Eine Serie kann höchstens {0} Zimmer enthalten.</value>
+  </data>
+  <data name="Category code must have 1 to 10 letters or digits." xml:space="preserve">
+    <value>Der Kategoriecode muss aus 1 bis 10 Buchstaben oder Ziffern bestehen.</value>
+  </data>
+  <data name="Category code {0} is already in use." xml:space="preserve">
+    <value>Der Kategoriecode {0} wird bereits verwendet.</value>
+  </data>
+  <data name="Category name cannot exceed 40 characters." xml:space="preserve">
+    <value>Der Kategoriename darf höchstens 40 Zeichen lang sein.</value>
+  </data>
+  <data name="Category name is required." xml:space="preserve">
+    <value>Der Kategoriename ist erforderlich.</value>
+  </data>
+  <data name="Category name {0} is already in use." xml:space="preserve">
+    <value>Der Kategoriename {0} wird bereits verwendet.</value>
+  </data>
+  <data name="Category {0} is still assigned to {1} room(s). Reassign or delete these rooms first." xml:space="preserve">
+    <value>Kategorie {0} ist noch {1} Zimmer(n) zugeordnet. Ordnen Sie diese Zimmer zuerst neu zu oder löschen Sie sie.</value>
+  </data>
+  <data name="Description cannot exceed 500 characters." xml:space="preserve">
+    <value>Die Beschreibung darf höchstens 500 Zeichen lang sein.</value>
+  </data>
+  <data name="Features cannot exceed 300 characters." xml:space="preserve">
+    <value>Die Ausstattung darf höchstens 300 Zeichen lang sein.</value>
+  </data>
+  <data name="Floor must be between {0} and {1}." xml:space="preserve">
+    <value>Die Etage muss zwischen {0} und {1} liegen.</value>
+  </data>
+  <data name="Notes cannot exceed 500 characters." xml:space="preserve">
+    <value>Die Notizen dürfen höchstens 500 Zeichen lang sein.</value>
+  </data>
+  <data name="Occupancy must satisfy 1 ≤ standard ≤ maximum ≤ {0}." xml:space="preserve">
+    <value>Für die Belegung muss gelten: 1 ≤ Standard ≤ Maximum ≤ {0}.</value>
+  </data>
+  <data name="Prefix may contain up to 4 letters or digits." xml:space="preserve">
+    <value>Das Präfix darf bis zu 4 Buchstaben oder Ziffern enthalten.</value>
+  </data>
+  <data name="Room category is required." xml:space="preserve">
+    <value>Die Zimmerkategorie ist erforderlich.</value>
+  </data>
+  <data name="Room category not found." xml:space="preserve">
+    <value>Zimmerkategorie nicht gefunden.</value>
+  </data>
+  <data name="Room category {0} does not exist." xml:space="preserve">
+    <value>Zimmerkategorie {0} existiert nicht.</value>
+  </data>
+  <data name="Room not found." xml:space="preserve">
+    <value>Zimmer nicht gefunden.</value>
+  </data>
+  <data name="Room number is required." xml:space="preserve">
+    <value>Die Zimmernummer ist erforderlich.</value>
+  </data>
+  <data name="Room number may contain up to 12 letters, digits, '-', '.' or '/'." xml:space="preserve">
+    <value>Die Zimmernummer darf bis zu 12 Buchstaben, Ziffern, '-', '.' oder '/' enthalten.</value>
+  </data>
+  <data name="Room number(s) already in use: {0}." xml:space="preserve">
+    <value>Zimmernummer(n) bereits vergeben: {0}.</value>
+  </data>
+  <data name="Room {0} has reservation history and cannot be deleted. Archive it instead." xml:space="preserve">
+    <value>Zimmer {0} hat bereits Reservierungen und kann nicht gelöscht werden. Archivieren Sie es stattdessen.</value>
+  </data>
+  <data name="Room {0} has {1} current or upcoming reservation(s). Move them to another room before archiving." xml:space="preserve">
+    <value>Zimmer {0} hat {1} laufende oder kommende Reservierung(en). Verschieben Sie diese vor dem Archivieren in ein anderes Zimmer.</value>
+  </data>
+  <data name="The last room number must be greater than or equal to the first." xml:space="preserve">
+    <value>Die letzte Zimmernummer muss größer oder gleich der ersten sein.</value>
+  </data>
+  <data name="Unknown housekeeping status." xml:space="preserve">
+    <value>Unbekannter Housekeeping-Status.</value>
+  </data>
+  <data name="{0} current or upcoming reservation(s) exceed the maximum occupancy of {1} guests." xml:space="preserve">
+    <value>{0} laufende oder kommende Reservierung(en) überschreiten die maximale Belegung von {1} Gästen.</value>
+  </data>
+</root>

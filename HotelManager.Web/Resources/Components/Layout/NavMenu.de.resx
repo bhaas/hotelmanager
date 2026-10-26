@@ -21,4 +21,10 @@
   <data name="Room Planner" xml:space="preserve">
     <value>Zimmerplaner</value>
   </data>
+  <data name="Rates &amp; availability" xml:space="preserve">
+    <value>Preise &amp; Verfügbarkeit</value>
+  </data>
+  <data name="Rooms &amp; categories" xml:space="preserve">
+    <value>Zimmer &amp; Kategorien</value>
+  </data>
 </root>

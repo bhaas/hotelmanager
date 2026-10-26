@@ -2,6 +2,7 @@ using HotelManager.Web.Components;
 using HotelManager.Web.Data;
 using HotelManager.Web.Features.Billing;
 using HotelManager.Web.Features.RoomPlanner;
+using HotelManager.Web.Features.Rooms;
 using QuestPDF.Infrastructure;
 using System.Globalization;
 using System.Text.Json.Serialization;
@@ -60,6 +61,7 @@ builder.Services.AddDbContextFactory<HotelDbContext>(options =>
 builder.Services.AddScoped<IRoomPlannerQueryService, RoomPlannerQueryService>();
 builder.Services.AddScoped<IRoomPlannerCommandService, RoomPlannerCommandService>();
 builder.Services.AddScoped<IRateAvailabilityService, RateAvailabilityService>();
+builder.Services.AddScoped<IRoomInventoryService, RoomInventoryService>();
 builder.Services.AddScoped<IBillingService, BillingService>();
 builder.Services.AddSingleton<IInvoicePdfService, InvoicePdfService>();
 builder.Services.AddHealthChecks()
@@ -99,7 +101,10 @@ if (initializeDatabaseOnStartup)
         await dbContext.Database.EnsureCreatedAsync();
         await RateAvailabilitySchemaInitializer.EnsureSchemaAsync(dbContext);
         await BillingSchemaInitializer.EnsureSchemaAsync(dbContext);
+        await HousekeepingSchemaInitializer.EnsureSchemaAsync(dbContext);
+        await RoomInventorySchemaInitializer.EnsureSchemaAsync(dbContext);
         await RoomPlannerSeedService.SeedAsync(dbContext);
+        await RoomInventorySchemaInitializer.BackfillCategoriesAsync(dbContext);
     }
     catch (Exception exception)
     {
@@ -136,6 +141,7 @@ app.MapGet("/set-culture", (string culture, string? redirectUri, HttpContext htt
 });
 app.MapHealthChecks("/health");
 app.MapRoomPlannerApi();
+app.MapRoomInventoryApi();
 app.MapBillingApi();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

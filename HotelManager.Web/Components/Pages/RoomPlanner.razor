@@ -7,10 +7,12 @@
 @inject IBillingService BillingService
 @inject IStringLocalizer<RoomPlanner> L
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
 
 <PageTitle>@L["Room Planner"]</PageTitle>
 
-<div class="planner-page">
+<div class="planner-page @(editor is not null && snapshot is not null ? "drawer-open" : null)" @ref="plannerPageElement">
     <header class="planner-header">
         <div>
             <h1>@L["Room Planner"]</h1>
@@ -31,6 +33,8 @@
                 <option value="14">@L["{0} days", 14]</option>
                 <option value="21">@L["{0} days", 21]</option>
                 <option value="31">@L["{0} days", 31]</option>
+                <option value="60">@L["{0} days", 60]</option>
+                <option value="90">@L["{0} days", 90]</option>
             </select>
             <input class="form-control room-search"
                    type="search"
@@ -42,22 +46,10 @@
                 <option value="confirmed">@GetStatusLabel(ReservationStatus.Confirmed)</option>
                 <option value="maintenance">@GetStatusLabel(ReservationStatus.Maintenance)</option>
                 <option value="blocked">@GetStatusLabel(ReservationStatus.Blocked)</option>
+                <option value="dirty">@L["Rooms to clean"]</option>
             </select>
         </div>
     </header>
-
-    @if (operationError is not null)
-    {
-        <div class="alert alert-danger" role="alert">
-            @operationError
-        </div>
-    }
-    else if (operationMessage is not null)
-    {
-        <div class="alert alert-success" role="alert">
-            @operationMessage
-        </div>
-    }
 
     @if (snapshot is not null)
     {
@@ -79,157 +71,331 @@
                 <div class="kpi-label">@L["Departures ({0})", viewStartDate.ToString("dd MMM")]</div>
             </div>
         </div>
+    }
 
-        <section class="rate-engine-section">
-            <div class="rate-engine-header">
-                <h2>@L["Rate & availability engine"]</h2>
-                <p>@L["Configure room rates and sell restrictions for cloud-ready pricing control."]</p>
-            </div>
-
-            @if (rateEngineError is not null)
+    <div class="planner-toolbar">
+        <div class="planner-legend">
+            @foreach (var status in legendStatuses)
             {
-                <div class="alert alert-danger" role="alert">@rateEngineError</div>
-            }
-            else if (rateEngineMessage is not null)
-            {
-                <div class="alert alert-success" role="alert">@rateEngineMessage</div>
-            }
-
-            <div class="rate-engine-grid">
-                <div class="rate-engine-card">
-                    <h3>@L["Add room rate rule"]</h3>
-                    <div class="rate-engine-form-grid">
-                        <select class="form-select" @bind="rateRule.RoomType">
-                            @foreach (var roomType in RoomTypeOptions)
-                            {
-                                <option value="@roomType">@roomType</option>
-                            }
-                        </select>
-                        <InputDate class="form-control" @bind-Value="rateRule.StartDate" />
-                        <InputDate class="form-control" @bind-Value="rateRule.EndDate" />
-                        <InputNumber class="form-control" @bind-Value="rateRule.OccupancyFrom" />
-                        <InputNumber class="form-control" @bind-Value="rateRule.OccupancyTo" />
-                        <InputNumber class="form-control" @bind-Value="rateRule.NightlyNetAmount" />
-                        <InputSelect class="form-select" @bind-Value="rateRule.VatRatePercent">
-                            <option value="20">20%</option>
-                            <option value="13">13%</option>
-                            <option value="10">10%</option>
-                            <option value="0">0%</option>
-                        </InputSelect>
-                        <InputNumber class="form-control" @bind-Value="rateRule.Priority" />
-                    </div>
-                    <button type="button" class="btn btn-outline-primary" @onclick="AddRateRuleAsync" disabled="@isExecutingRateEngine">
-                        @L["Save rate rule"]
-                    </button>
+                <div class="legend-item">
+                    <span class="legend-badge @GetStatusClass(status)"></span>
+                    <span>@GetStatusLabel(status)</span>
                 </div>
+            }
+            <span class="legend-separator" aria-hidden="true"></span>
+            @foreach (var housekeepingStatus in housekeepingStatuses)
+            {
+                <div class="legend-item">
+                    <span class="hk-dot @GetHousekeepingClass(housekeepingStatus)"></span>
+                    <span>@GetHousekeepingLabel(housekeepingStatus)</span>
+                </div>
+            }
+        </div>
+        <div class="planner-toolbar-right">
+            <span class="planner-hint">@L["Tip: drag across empty days to create a reservation. Right-click a reservation for actions."]</span>
+            <label class="group-by-label" for="group-by">@L["Group"]</label>
+            <select id="group-by" class="form-select form-select-sm group-by-select" @bind="groupBy">
+                <option value="none">@L["No grouping"]</option>
+                <option value="floor">@L["By floor"]</option>
+                <option value="type">@L["By room type"]</option>
+            </select>
+            <div class="btn-group btn-group-sm" role="group" aria-label="@L["Zoom"]">
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        title="@L["Zoom out (Ctrl + mouse wheel)"]"
+                        disabled="@(zoomLevel == 0)"
+                        @onclick="() => ChangeZoom(-1)">−</button>
+                <span class="btn btn-outline-secondary disabled zoom-label">@L["Zoom"] @(zoomLevel + 1)/@zoomDayWidths.Length</span>
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        title="@L["Zoom in (Ctrl + mouse wheel)"]"
+                        disabled="@(zoomLevel == zoomDayWidths.Length - 1)"
+                        @onclick="() => ChangeZoom(1)">+</button>
+            </div>
+            <div class="btn-group btn-group-sm" role="group" aria-label="@L["Row density"]">
+                <button type="button"
+                        class="btn @(compactRows ? "btn-secondary" : "btn-outline-secondary")"
+                        @onclick="() => compactRows = true">@L["Compact"]</button>
+                <button type="button"
+                        class="btn @(compactRows ? "btn-outline-secondary" : "btn-secondary")"
+                        @onclick="() => compactRows = false">@L["Comfortable"]</button>
+            </div>
+        </div>
+    </div>
 
-                <div class="rate-engine-card">
-                    <h3>@L["Add availability rule"]</h3>
-                    <div class="rate-engine-form-grid">
-                        <InputSelect class="form-select" @bind-Value="availabilityRule.Scope">
-                            <option value="type">@L["By room type"]</option>
-                            <option value="room">@L["By specific room"]</option>
-                        </InputSelect>
-
-                        @if (availabilityRule.Scope == "room")
-                        {
-                            <InputSelect class="form-select" @bind-Value="availabilityRule.RoomId">
-                                @foreach (var room in snapshot.Rooms.OrderBy(item => item.RoomNumber))
-                                {
-                                    <option value="@room.RoomId">@room.RoomNumber · @room.RoomType</option>
-                                }
-                            </InputSelect>
-                        }
-                        else
-                        {
-                            <select class="form-select" @bind="availabilityRule.RoomType">
-                                @foreach (var roomType in RoomTypeOptions)
-                                {
-                                    <option value="@roomType">@roomType</option>
-                                }
-                            </select>
-                        }
-
-                        <InputDate class="form-control" @bind-Value="availabilityRule.StartDate" />
-                        <InputDate class="form-control" @bind-Value="availabilityRule.EndDate" />
-                        <div class="rate-engine-checkboxes">
-                            <label><input type="checkbox" @bind="availabilityRule.StopSell" /> @L["Stop sell"]</label>
-                            <label><input type="checkbox" @bind="availabilityRule.ClosedToArrival" /> @L["Closed to arrival"]</label>
-                            <label><input type="checkbox" @bind="availabilityRule.ClosedToDeparture" /> @L["Closed to departure"]</label>
+    @if (loadError is not null)
+    {
+        <div class="alert alert-danger" role="alert">
+            @L["Failed to load room planner data: {0}", loadError]
+        </div>
+    }
+    else if (snapshot is null)
+    {
+        <p><em>@L["Loading room planner..."]</em></p>
+    }
+    else
+    {
+        var visibleRooms = FilteredRooms.ToList();
+        <div class="planner-board @(compactRows ? "planner-compact" : "planner-comfortable") zoom-@zoomLevel"
+             data-label-nights="@L["{0} nights"]"
+             data-label-night="@L["{0} night"]"
+             data-label-guests="@L["guests"]"
+             data-label-room="@L["Room"]">
+            <div class="planner-top-row">
+                <div class="room-column-header">@L["Room"]</div>
+                <div class="timeline-header" style="@TimelineColumnsStyle">
+                    @for (var dayOffset = 0; dayOffset < snapshot.Days; dayOffset++)
+                    {
+                        var day = snapshot.StartDate.AddDays(dayOffset);
+                        <div class="@GetDayHeaderClass(day)" title="@day.ToString("dddd, dd MMMM yyyy")">
+                            <span class="day-name">@day.ToString("ddd")</span>
+                            <span class="day-date">@day.ToString("dd MMM")</span>
+                            <span class="day-number">@day.ToString("dd")</span>
                         </div>
-                        <InputNumber class="form-control" @bind-Value="availabilityRule.MinStayNights" />
-                    </div>
-                    <button type="button" class="btn btn-outline-primary" @onclick="AddAvailabilityRuleAsync" disabled="@isExecutingRateEngine">
-                        @L["Save availability rule"]
+                    }
+                </div>
+                <div class="room-column-header summary-label">
+                    <button type="button"
+                            class="summary-toggle"
+                            title="@L["Show availability by room type"]"
+                            aria-expanded="@(showRoomTypeBreakdown ? "true" : "false")"
+                            @onclick="() => showRoomTypeBreakdown = !showRoomTypeBreakdown">
+                        <span class="summary-toggle-icon">@(showRoomTypeBreakdown ? "▾" : "▸")</span>
+                        @L["Free / occupancy"]
                     </button>
                 </div>
+                <div class="timeline-header summary-row" style="@TimelineColumnsStyle">
+                    @for (var dayOffset = 0; dayOffset < snapshot.Days; dayOffset++)
+                    {
+                        var day = snapshot.StartDate.AddDays(dayOffset);
+                        var summary = GetDaySummary(visibleRooms, day);
+                        <div class="@GetSummaryCellClass(summary)"
+                             title="@L["{0} free · {1} occupied · {2} out of order", summary.Free, summary.Occupied, summary.OutOfOrder]">
+                            <span class="summary-free">@summary.Free</span>
+                            <span class="summary-occupancy">@summary.OccupancyPercent%</span>
+                        </div>
+                    }
+                </div>
+                @if (showRoomTypeBreakdown)
+                {
+                    @foreach (var roomTypeGroup in visibleRooms.GroupBy(r => r.RoomType).OrderBy(g => g.Key))
+                    {
+                        var typeRooms = roomTypeGroup.ToList();
+                        <div class="room-column-header summary-label summary-type-label" title="@roomTypeGroup.Key">
+                            @roomTypeGroup.Key <span class="summary-type-count">(@typeRooms.Count)</span>
+                        </div>
+                        <div class="timeline-header summary-row summary-type-row" style="@TimelineColumnsStyle">
+                            @for (var dayOffset = 0; dayOffset < snapshot.Days; dayOffset++)
+                            {
+                                var day = snapshot.StartDate.AddDays(dayOffset);
+                                var summary = GetDaySummary(typeRooms, day);
+                                <div class="@GetSummaryCellClass(summary) @(summary.Free == 0 ? "summary-sold-out" : null)"
+                                     title="@roomTypeGroup.Key: @L["{0} free · {1} occupied · {2} out of order", summary.Free, summary.Occupied, summary.OutOfOrder]">
+                                    <span class="summary-free">@summary.Free</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
             </div>
 
-            @if (rateAvailabilitySnapshot is not null)
+            @foreach (var group in GetRoomGroups(visibleRooms))
             {
-                <div class="rate-engine-ledger">
-                    <div>
-                        <h3>@L["Rate rules"]</h3>
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>@L["Room type"]</th>
-                                    <th>@L["Period"]</th>
-                                    <th>@L["Occupancy"]</th>
-                                    <th class="text-end">@L["Net / night"]</th>
-                                    <th>@L["VAT"]</th>
-                                    <th>@L["Priority"]</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var rule in rateAvailabilitySnapshot.RateRules)
-                                {
-                                    <tr>
-                                        <td>@rule.RoomType</td>
-                                        <td>@rule.StartDate.ToString("dd.MM.yyyy") - @rule.EndDate.ToString("dd.MM.yyyy")</td>
-                                        <td>@BuildOccupancyRange(rule.OccupancyFrom, rule.OccupancyTo)</td>
-                                        <td class="text-end">@FormatCurrency(rule.NightlyNetAmount)</td>
-                                        <td>@rule.VatRatePercent.ToString("0.##")%</td>
-                                        <td>@rule.Priority</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
+                var collapsed = group.Key is not null && collapsedGroups.Contains(group.Key);
+                @if (group.Key is not null)
+                {
+                    <div class="planner-group-row">
+                        <div class="room-column-header group-header">
+                            <button type="button"
+                                    class="group-toggle"
+                                    aria-expanded="@(collapsed ? "false" : "true")"
+                                    @onclick="() => ToggleGroup(group.Key)">
+                                <span class="summary-toggle-icon">@(collapsed ? "▸" : "▾")</span>
+                                <span class="group-title">@group.Label</span>
+                                <span class="summary-type-count">(@group.Rooms.Count)</span>
+                            </button>
+                        </div>
+                        <div class="timeline-header summary-row group-summary-row" style="@TimelineColumnsStyle">
+                            @for (var dayOffset = 0; dayOffset < snapshot.Days; dayOffset++)
+                            {
+                                var day = snapshot.StartDate.AddDays(dayOffset);
+                                var summary = GetDaySummary(group.Rooms, day);
+                                <div class="summary-cell group-summary-cell @(summary.Free == 0 ? "summary-sold-out" : null)"
+                                     title="@group.Label: @L["{0} free · {1} occupied · {2} out of order", summary.Free, summary.Occupied, summary.OutOfOrder]">
+                                    <span class="summary-free">@summary.Free</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (collapsed)
+                {
+                    continue;
+                }
+
+                @foreach (var room in group.Rooms)
+                {
+                <div class="planner-room-row">
+                    <div class="room-card"
+                         title="@GetRoomCardTitle(room)"
+                         @oncontextmenu="args => OpenRoomMenu(args, room)"
+                         @oncontextmenu:preventDefault="true">
+                        <button type="button"
+                                class="hk-dot hk-button @GetHousekeepingClass(room.HousekeepingStatus)"
+                                aria-label="@L["Housekeeping: {0}", GetHousekeepingLabel(room.HousekeepingStatus)]"
+                                @onclick="args => OpenRoomMenu(args, room)"></button>
+                        <span class="room-number">@room.RoomNumber</span>
+                        <span class="room-type">@room.RoomType</span>
+                        <span class="room-floor">@L["Floor {0}", room.Floor]</span>
                     </div>
 
-                    <div>
-                        <h3>@L["Availability rules"]</h3>
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>@L["Scope"]</th>
-                                    <th>@L["Period"]</th>
-                                    <th>@L["Constraints"]</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var rule in rateAvailabilitySnapshot.AvailabilityRules)
-                                {
-                                    <tr>
-                                        <td>@BuildAvailabilityScope(rule)</td>
-                                        <td>@rule.StartDate.ToString("dd.MM.yyyy") - @rule.EndDate.ToString("dd.MM.yyyy")</td>
-                                        <td>@BuildAvailabilityConstraintLabel(rule)</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
+                    <div class="timeline-row" data-room-id="@room.RoomId" style="@HalfDayColumnsStyle">
+                        @for (var dayOffset = 0; dayOffset < snapshot.Days; dayOffset++)
+                        {
+                            var day = snapshot.StartDate.AddDays(dayOffset);
+                            <div class="@GetDayCellClass(day)"
+                                 data-room-id="@room.RoomId"
+                                 data-day="@day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
+                                 style="grid-column: @(dayOffset * 2 + 1) / span 2; grid-row: 1;"></div>
+                        }
+
+                        @foreach (var reservation in room.Reservations)
+                        {
+                            var placement = GetPlacement(reservation);
+                            if (placement is null)
+                            {
+                                continue;
+                            }
+
+                            <button type="button"
+                                    class="@GetReservationChipClass(reservation, placement.Value)"
+                                    style="grid-column: @($"{placement.Value.StartColumn} / {placement.Value.EndColumn}"); grid-row: 1;"
+                                    aria-label="@BuildReservationTitle(reservation)"
+                                    data-reservation-id="@reservation.ReservationId"
+                                    data-room-id="@room.RoomId"
+                                    data-check-in="@reservation.CheckIn.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
+                                    data-check-out="@reservation.CheckOut.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)"
+                                    data-locked="@(isExecutingAction ? "true" : "false")"
+                                    data-card-guest="@reservation.GuestName"
+                                    data-card-room="@($"{room.RoomNumber} · {room.RoomType}")"
+                                    data-card-dates="@($"{reservation.CheckIn:ddd, dd MMM} – {reservation.CheckOut:ddd, dd MMM yyyy}")"
+                                    data-card-nights="@(reservation.CheckOut.DayNumber - reservation.CheckIn.DayNumber)"
+                                    data-card-occupancy="@reservation.Occupancy"
+                                    data-card-status="@GetStatusLabel(reservation.Status)"
+                                    data-card-status-class="@GetStatusClass(reservation.Status)"
+                                    data-card-notes="@reservation.Notes"
+                                    @onclick="() => StartEditReservationAsync(room.RoomId, reservation)"
+                                    @oncontextmenu="args => OpenContextMenu(args, room, reservation)"
+                                    @oncontextmenu:preventDefault="true">
+                                <span class="reservation-resize-handle reservation-resize-handle-start"
+                                      @onclick:stopPropagation="true">
+                                </span>
+                                <span class="reservation-guest">@reservation.GuestName</span>
+                                <span class="reservation-dates">@reservation.CheckIn.ToString("dd MMM") - @reservation.CheckOut.ToString("dd MMM")</span>
+                                <span class="reservation-resize-handle reservation-resize-handle-end"
+                                      @onclick:stopPropagation="true">
+                                </span>
+                            </button>
+                        }
                     </div>
                 </div>
+                }
             }
-        </section>
+        </div>
+
+        @if (roomMenu is not null)
+        {
+            <div class="context-menu-backdrop"
+                 @onclick="CloseContextMenu"
+                 @oncontextmenu="CloseContextMenu"
+                 @oncontextmenu:preventDefault="true"></div>
+            <div class="context-menu" role="menu" style="@($"left: {roomMenu.X.ToString(CultureInfo.InvariantCulture)}px; top: {roomMenu.Y.ToString(CultureInfo.InvariantCulture)}px;")">
+                <div class="context-menu-title">
+                    <span class="hk-dot @GetHousekeepingClass(roomMenu.Room.HousekeepingStatus)"></span>
+                    <span>@L["Room {0}", roomMenu.Room.RoomNumber]</span>
+                    <span class="context-menu-subtitle">@roomMenu.Room.RoomType · @L["Floor {0}", roomMenu.Room.Floor]</span>
+                </div>
+                <div class="context-menu-heading">@L["Housekeeping"]</div>
+                @foreach (var housekeepingStatus in housekeepingStatuses)
+                {
+                    var isCurrent = roomMenu.Room.HousekeepingStatus == housekeepingStatus;
+                    <button type="button" role="menuitemradio"
+                            aria-checked="@(isCurrent ? "true" : "false")"
+                            class="context-menu-item @(isCurrent ? "context-menu-current" : null)"
+                            @onclick="() => SetHousekeepingStatusAsync(housekeepingStatus)">
+                        <span class="hk-dot @GetHousekeepingClass(housekeepingStatus)"></span>
+                        @GetHousekeepingLabel(housekeepingStatus)
+                        @if (isCurrent)
+                        {
+                            <span class="context-menu-check">✓</span>
+                        }
+                    </button>
+                }
+                <div class="context-menu-separator"></div>
+                <button type="button" role="menuitem" class="context-menu-item" @onclick="RoomMenuCreateReservation">+ @L["New reservation in this room"]</button>
+                <button type="button" role="menuitem" class="context-menu-item" @onclick="RoomMenuEditRoom">✎ @L["Edit room..."]</button>
+            </div>
+        }
+
+        @if (contextMenu is not null)
+        {
+            var menuReservation = contextMenu.Reservation;
+            <div class="context-menu-backdrop"
+                 @onclick="CloseContextMenu"
+                 @oncontextmenu="CloseContextMenu"
+                 @oncontextmenu:preventDefault="true"></div>
+            <div class="context-menu" role="menu" style="@($"left: {contextMenu.X.ToString(CultureInfo.InvariantCulture)}px; top: {contextMenu.Y.ToString(CultureInfo.InvariantCulture)}px;")">
+                <div class="context-menu-title">
+                    <span class="legend-badge @GetStatusClass(menuReservation.Status)"></span>
+                    <span>@menuReservation.GuestName</span>
+                    <span class="context-menu-subtitle">@contextMenu.RoomLabel</span>
+                </div>
+                <button type="button" role="menuitem" class="context-menu-item" @onclick="() => ContextEditAsync(false)">✎ @L["Open reservation"]</button>
+                <button type="button" role="menuitem" class="context-menu-item" @onclick="() => ContextEditAsync(true)">€ @L["Billing & invoice"]</button>
+                <div class="context-menu-separator"></div>
+                <button type="button" role="menuitem" class="context-menu-item"
+                        disabled="@(menuReservation.Status != ReservationStatus.Confirmed)"
+                        @onclick="ContextCheckInAsync">
+                    ⇥ @L["Check in"]
+                </button>
+                <button type="button" role="menuitem" class="context-menu-item"
+                        disabled="@(menuReservation.Status != ReservationStatus.CheckedIn)"
+                        @onclick="ContextCheckOutAsync">
+                    ⇤ @L["Check out"]
+                </button>
+                <div class="context-menu-separator"></div>
+                <button type="button" role="menuitem" class="context-menu-item context-menu-danger"
+                        disabled="@(menuReservation.Status is ReservationStatus.CheckedOut or ReservationStatus.Cancelled)"
+                        @onclick="ContextCancelAsync">
+                    ✕ @L["Cancel reservation"]
+                </button>
+            </div>
+        }
     }
 
     @if (editor is not null && snapshot is not null)
     {
+        <aside class="editor-drawer" role="dialog" aria-label="@(editor.ReservationId is null ? L["Create reservation"] : L["Edit reservation"])">
         <section class="reservation-editor">
             <div class="reservation-editor-header">
-                <h2>@(editor.ReservationId is null ? L["Create reservation"] : L["Edit reservation"])</h2>
-                <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="CloseEditor" disabled="@isExecutingAction">@L["Close"]</button>
+                <div>
+                    <h2>@(editor.ReservationId is null ? L["Create reservation"] : L["Edit reservation"])</h2>
+                    <div class="reservation-editor-subtitle">
+                        @L["Room {0}", GetRoomLabel(editor.RoomId)] · @editor.CheckIn.ToString("ddd, dd MMM") – @editor.CheckOut.ToString("ddd, dd MMM yyyy")
+                        @if (editor.CheckOut > editor.CheckIn)
+                        {
+                            var editorNights = editor.CheckOut.DayNumber - editor.CheckIn.DayNumber;
+                            <span> · @(editorNights == 1 ? L["{0} night", editorNights] : L["{0} nights", editorNights])</span>
+                        }
+                    </div>
+                </div>
+                <button type="button"
+                        class="btn-close editor-drawer-close"
+                        aria-label="@L["Close"]"
+                        title="@L["Close (Esc)"]"
+                        @onclick="CloseEditor"
+                        disabled="@isExecutingAction"></button>
             </div>
 
             <div class="reservation-editor-grid">
@@ -264,7 +430,13 @@
                     </InputSelect>
                 </div>
                 <div>
-                    <label class="form-label" for="editor-occupancy">@L["Occupancy"]</label>
+                    <label class="form-label" for="editor-occupancy">
+                        @L["Occupancy"]
+                        @if (EditorMaxOccupancy is { } maxGuests)
+                        {
+                            <small class="text-muted">(@L["max. {0}", maxGuests])</small>
+                        }
+                    </label>
                     <InputNumber id="editor-occupancy" class="form-control" @bind-Value="editor.Occupancy" disabled="@isExecutingAction" />
                 </div>
                 <div class="editor-notes">
@@ -280,6 +452,10 @@
             else if (editor.Occupancy <= 0)
             {
                 <div class="editor-validation-error">@L["Occupancy must be greater than 0."]</div>
+            }
+            else if (EditorMaxOccupancy is { } limit && editor.Occupancy > limit)
+            {
+                <div class="editor-validation-error">@L["This room allows at most {0} guest(s).", limit]</div>
             }
 
             <section class="rate-quote-section">
@@ -305,15 +481,15 @@
                             <div class="rate-quote-label">@L["Nights"]</div>
                         </div>
                         <div>
-                            <div class="rate-quote-value">@FormatCurrency(rateQuote.NetAmount)</div>
+                            <div class="rate-quote-value">@MoneyFormatter.Format(rateQuote.NetAmount)</div>
                             <div class="rate-quote-label">@L["Net total"]</div>
                         </div>
                         <div>
-                            <div class="rate-quote-value">@FormatCurrency(rateQuote.VatAmount)</div>
+                            <div class="rate-quote-value">@MoneyFormatter.Format(rateQuote.VatAmount)</div>
                             <div class="rate-quote-label">@L["VAT total"]</div>
                         </div>
                         <div>
-                            <div class="rate-quote-value">@FormatCurrency(rateQuote.GrossAmount)</div>
+                            <div class="rate-quote-value">@MoneyFormatter.Format(rateQuote.GrossAmount)</div>
                             <div class="rate-quote-label">@L["Gross total"]</div>
                         </div>
                     </div>
@@ -373,19 +549,19 @@
                     {
                         <div class="billing-kpis">
                             <div class="billing-kpi-card">
-                                <div class="billing-kpi-value">@FormatCurrency(billingSnapshot.NetAmount)</div>
+                                <div class="billing-kpi-value">@MoneyFormatter.Format(billingSnapshot.NetAmount)</div>
                                 <div class="billing-kpi-label">@L["Net"]</div>
                             </div>
                             <div class="billing-kpi-card">
-                                <div class="billing-kpi-value">@FormatCurrency(billingSnapshot.VatAmount)</div>
+                                <div class="billing-kpi-value">@MoneyFormatter.Format(billingSnapshot.VatAmount)</div>
                                 <div class="billing-kpi-label">@L["VAT"]</div>
                             </div>
                             <div class="billing-kpi-card">
-                                <div class="billing-kpi-value">@FormatCurrency(billingSnapshot.GrossAmount)</div>
+                                <div class="billing-kpi-value">@MoneyFormatter.Format(billingSnapshot.GrossAmount)</div>
                                 <div class="billing-kpi-label">@L["Gross"]</div>
                             </div>
                             <div class="billing-kpi-card">
-                                <div class="billing-kpi-value">@FormatCurrency(billingSnapshot.OpenAmount)</div>
+                                <div class="billing-kpi-value">@MoneyFormatter.Format(billingSnapshot.OpenAmount)</div>
                                 <div class="billing-kpi-label">@L["Open"]</div>
                             </div>
                         </div>
@@ -468,7 +644,7 @@
                                                 <td>@entry.ServiceDate.ToString("dd.MM.yyyy")</td>
                                                 <td>@entry.Description</td>
                                                 <td>@entry.VatRatePercent.ToString("0.##")%</td>
-                                                <td class="text-end">@FormatCurrency(entry.GrossAmount)</td>
+                                                <td class="text-end">@MoneyFormatter.Format(entry.GrossAmount)</td>
                                             </tr>
                                         }
                                     </tbody>
@@ -490,7 +666,7 @@
                                             <tr>
                                                 <td>@payment.PaidAtUtc.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
                                                 <td>@GetPaymentMethodLabel(payment.Method)</td>
-                                                <td class="text-end">@FormatCurrency(payment.Amount)</td>
+                                                <td class="text-end">@MoneyFormatter.Format(payment.Amount)</td>
                                             </tr>
                                         }
                                     </tbody>
@@ -501,109 +677,27 @@
                 </section>
             }
         </section>
+        </aside>
     }
 
-    <div class="planner-legend">
-        @foreach (var status in legendStatuses)
-        {
-            <div class="legend-item">
-                <span class="legend-badge @GetStatusClass(status)"></span>
-                <span>@GetStatusLabel(status)</span>
-            </div>
-        }
-    </div>
-
-    @if (loadError is not null)
+    @if (operationError is not null || operationMessage is not null)
     {
-        <div class="alert alert-danger" role="alert">
-            @L["Failed to load room planner data: {0}", loadError]
-        </div>
-    }
-    else if (snapshot is null)
-    {
-        <p><em>@L["Loading room planner..."]</em></p>
-    }
-    else
-    {
-        <div class="planner-board">
-            <div class="planner-top-row">
-                <div class="room-column-header">@L["Room"]</div>
-                <div class="timeline-header" style="@TimelineColumnsStyle">
-                    @for (var dayOffset = 0; dayOffset < snapshot.Days; dayOffset++)
-                    {
-                        var day = snapshot.StartDate.AddDays(dayOffset);
-                        <div class="@GetDayHeaderClass(day)">
-                            <span class="day-name">@day.ToString("ddd")</span>
-                            <span class="day-date">@day.ToString("dd MMM")</span>
-                        </div>
-                    }
-                </div>
-            </div>
-
-            @foreach (var room in FilteredRooms)
+        <div class="planner-toast @(operationError is not null ? "planner-toast-error" : "planner-toast-success")"
+             role="@(operationError is not null ? "alert" : "status")"
+             aria-live="polite">
+            <span class="planner-toast-icon" aria-hidden="true">@(operationError is not null ? "!" : "✓")</span>
+            <span class="planner-toast-message">@(operationError ?? operationMessage)</span>
+            @if (operationError is null && undoState is not null)
             {
-                <div class="planner-room-row">
-                    <div class="room-card">
-                        <div class="room-number">@room.RoomNumber</div>
-                        <div class="room-type">@room.RoomType</div>
-                        <div class="room-floor">@L["Floor {0}", room.Floor]</div>
-                        <button type="button"
-                                class="btn btn-sm btn-outline-primary room-action-btn"
-                                @onclick="() => StartCreateReservation(room.RoomId)">
-                            + @L["Reservation"]
-                        </button>
-                    </div>
-
-                    <div class="@GetTimelineRowClass(room.RoomId)" style="@TimelineColumnsStyle">
-                        @for (var dayOffset = 0; dayOffset < snapshot.Days; dayOffset++)
-                        {
-                            var day = snapshot.StartDate.AddDays(dayOffset);
-                            <div class="@GetDayCellClass(day, room.RoomId)"
-                                 @ondragenter="() => SetDragTarget(room.RoomId, day)"
-                                 @ondragleave="() => ClearDragTarget(room.RoomId, day)"
-                                 @ondrop="() => DropReservationAsync(room.RoomId, day)"
-                                 @ondragover:preventDefault></div>
-                        }
-
-                        @foreach (var reservation in room.Reservations)
-                        {
-                            var placement = GetPlacement(reservation);
-                            if (placement is null)
-                            {
-                                continue;
-                            }
-
-                            <button type="button"
-                                    class="@GetReservationChipClass(reservation)"
-                                    style="grid-column: @($"{placement.Value.Start} / span {placement.Value.Span}")"
-                                    title="@BuildReservationTitle(reservation)"
-                                    draggable="true"
-                                    @ondragstart="() => StartReservationMoveDrag(room.RoomId, reservation)"
-                                    @ondragend="EndReservationDrag"
-                                    @onclick="() => StartEditReservationAsync(room.RoomId, reservation)">
-                                <span class="reservation-resize-handle reservation-resize-handle-start"
-                                      title="@L["Drag to change check-in date"]"
-                                      draggable="true"
-                                      @ondragstart:stopPropagation="true"
-                                      @ondragstart="() => StartReservationResizeDrag(room.RoomId, reservation, true)"
-                                      @ondragend="EndReservationDrag"
-                                      @onclick:stopPropagation="true">
-                                </span>
-                                <span class="reservation-guest">@reservation.GuestName</span>
-                                <span class="reservation-dates">@reservation.CheckIn.ToString("dd MMM") - @reservation.CheckOut.ToString("dd MMM")</span>
-                                <span class="reservation-resize-handle reservation-resize-handle-end"
-                                      title="@L["Drag to change check-out date"]"
-                                      draggable="true"
-                                      @ondragstart:stopPropagation="true"
-                                      @ondragstart="() => StartReservationResizeDrag(room.RoomId, reservation, false)"
-                                      @ondragend="EndReservationDrag"
-                                      @onclick:stopPropagation="true">
-                                </span>
-                            </button>
-                        }
-                    </div>
-                </div>
+                <button type="button"
+                        class="planner-toast-undo"
+                        title="@L["Undo (Ctrl+Z)"]"
+                        disabled="@isExecutingAction"
+                        @onclick="UndoAsync">
+                    @L["Undo"]
+                </button>
             }
+            <button type="button" class="planner-toast-close" aria-label="@L["Close"]" @onclick="DismissToast">✕</button>
         </div>
     }
 </div>
@@ -632,22 +726,34 @@
     private bool isExecutingAction;
     private bool isLoadingBilling;
     private bool isExecutingBilling;
-    private DragReservationContext? dragReservation;
-    private Guid? dragTargetRoomId;
-    private DateOnly? dragTargetDate;
+    private ElementReference plannerPageElement;
+    private DotNetObjectReference<RoomPlanner>? dotNetReference;
+    private bool compactRows = true;
+    private string? scrollEditorTarget;
+    private static readonly int[] zoomDayWidths = [36, 54, 90, 140];
+    private int zoomLevel = 2;
+    private bool showRoomTypeBreakdown;
+    private ContextMenuState? contextMenu;
+    private bool fitContextMenu;
+    private static readonly HousekeepingStatus[] housekeepingStatuses =
+    [
+        HousekeepingStatus.Dirty,
+        HousekeepingStatus.Clean,
+        HousekeepingStatus.Inspected
+    ];
+    private string groupBy = "none";
+    private readonly HashSet<string> collapsedGroups = [];
+    private RoomMenuState? roomMenu;
+    private UndoState? undoState;
+    private CancellationTokenSource? toastTimer;
+    private string? scheduledToastMessage;
     private Guid? billingReservationId;
     private BillingFolioSnapshot? billingSnapshot;
-    private RoomRateAvailabilitySnapshot? rateAvailabilitySnapshot;
     private RoomRateQuote? rateQuote;
     private string? rateQuoteError;
-    private string? rateEngineError;
-    private string? rateEngineMessage;
-    private bool isExecutingRateEngine;
     private BillingEntryModel billingEntry = new();
     private BillingPaymentModel billingPayment = new();
     private BillingInvoiceModel billingInvoice = new();
-    private RateRuleModel rateRule = new();
-    private AvailabilityRuleModel availabilityRule = new();
 
     protected override Task OnInitializedAsync()
     {
@@ -674,8 +780,6 @@
         try
         {
             snapshot = await RoomPlannerQueryService.GetSnapshotAsync(viewStartDate, daysToShow, CancellationToken.None);
-            rateAvailabilitySnapshot = await RateAvailabilityService.GetSnapshotAsync(viewStartDate, daysToShow, CancellationToken.None);
-            EnsureRateEngineDefaults();
         }
         catch (Exception exception)
         {
@@ -687,16 +791,278 @@
         }
     }
 
-    private string TimelineColumnsStyle => $"grid-template-columns: repeat({daysToShow}, minmax(90px, 1fr));";
+    private string TimelineColumnsStyle => $"grid-template-columns: repeat({daysToShow}, minmax({zoomDayWidths[zoomLevel]}px, 1fr));";
+
+    // Rows use two columns per day so stays can start/end at mid-day (arrival afternoon, departure morning).
+    private string HalfDayColumnsStyle => $"grid-template-columns: repeat({daysToShow * 2}, minmax({zoomDayWidths[zoomLevel] / 2}px, 1fr));";
+
+    private void ChangeZoom(int delta)
+    {
+        zoomLevel = Math.Clamp(zoomLevel + delta, 0, zoomDayWidths.Length - 1);
+    }
+
+    [JSInvokable]
+    public void OnZoomRequested(int delta)
+    {
+        var previous = zoomLevel;
+        ChangeZoom(delta);
+        if (previous != zoomLevel)
+        {
+            StateHasChanged();
+        }
+    }
+
+    private void OpenContextMenu(MouseEventArgs args, RoomPlannerRoom room, RoomPlannerReservation reservation)
+    {
+        roomMenu = null;
+        contextMenu = new ContextMenuState(
+            reservation,
+            room.RoomId,
+            $"{L["Room"]} {room.RoomNumber} · {room.RoomType}",
+            args.ClientX,
+            args.ClientY);
+        fitContextMenu = true;
+    }
+
+    private void CloseContextMenu()
+    {
+        contextMenu = null;
+        roomMenu = null;
+    }
+
+    private void OpenRoomMenu(MouseEventArgs args, RoomPlannerRoom room)
+    {
+        contextMenu = null;
+        roomMenu = new RoomMenuState(room, args.ClientX, args.ClientY);
+        fitContextMenu = true;
+    }
+
+    private async Task SetHousekeepingStatusAsync(HousekeepingStatus status)
+    {
+        if (roomMenu is null)
+        {
+            return;
+        }
+
+        var room = roomMenu.Room;
+        roomMenu = null;
+        if (room.HousekeepingStatus == status)
+        {
+            return;
+        }
+
+        ClearOperationMessages();
+        try
+        {
+            await RoomPlannerCommandService.SetHousekeepingStatusAsync(room.RoomId, status, CancellationToken.None);
+            operationMessage = L["Room {0} marked as {1}.", room.RoomNumber, GetHousekeepingLabel(status)];
+            await ReloadAsync();
+        }
+        catch (ReservationNotFoundException exception)
+        {
+            operationError = exception.Message;
+        }
+        catch (ReservationValidationException exception)
+        {
+            operationError = exception.Message;
+        }
+    }
+
+    private void RoomMenuCreateReservation()
+    {
+        if (roomMenu is null)
+        {
+            return;
+        }
+
+        var roomId = roomMenu.Room.RoomId;
+        roomMenu = null;
+        StartCreateReservation(roomId);
+    }
+
+    private int? EditorMaxOccupancy =>
+        editor is not null
+        && editor.Status is not (ReservationStatus.Blocked or ReservationStatus.Maintenance)
+        && snapshot?.Rooms.FirstOrDefault(room => room.RoomId == editor.RoomId) is { MaxOccupancy: > 0 } room
+            ? room.MaxOccupancy
+            : null;
+
+    private string GetRoomCardTitle(RoomPlannerRoom room)
+    {
+        var parts = new List<string> { room.RoomType, L["Floor {0}", room.Floor], GetHousekeepingLabel(room.HousekeepingStatus) };
+        if (room.MaxOccupancy > 0)
+        {
+            parts.Add(L["max. {0}", room.MaxOccupancy]);
+        }
+
+        if (!string.IsNullOrWhiteSpace(room.Features))
+        {
+            parts.Add(room.Features);
+        }
+
+        return string.Join(" · ", parts);
+    }
+
+    private void RoomMenuEditRoom()
+    {
+        if (roomMenu is null)
+        {
+            return;
+        }
+
+        var roomId = roomMenu.Room.RoomId;
+        roomMenu = null;
+        Navigation.NavigateTo($"settings/rooms?room={roomId}");
+    }
+
+    private string GetHousekeepingLabel(HousekeepingStatus status) => status switch
+    {
+        HousekeepingStatus.Dirty => L["Dirty"],
+        HousekeepingStatus.Inspected => L["Inspected"],
+        _ => L["Clean"]
+    };
+
+    private static string GetHousekeepingClass(HousekeepingStatus status) => status switch
+    {
+        HousekeepingStatus.Dirty => "hk-dirty",
+        HousekeepingStatus.Inspected => "hk-inspected",
+        _ => "hk-clean"
+    };
+
+    private IEnumerable<RoomGroup> GetRoomGroups(List<RoomPlannerRoom> rooms)
+    {
+        return groupBy switch
+        {
+            "floor" => rooms
+                .GroupBy(room => room.Floor)
+                .OrderBy(group => group.Key)
+                .Select(group => new RoomGroup($"floor:{group.Key}", L["Floor {0}", group.Key], group.ToList())),
+            "type" => rooms
+                .GroupBy(room => room.RoomType, StringComparer.OrdinalIgnoreCase)
+                .OrderBy(group => group.Key)
+                .Select(group => new RoomGroup($"type:{group.Key}", group.Key, group.ToList())),
+            _ => [new RoomGroup(null, string.Empty, rooms)]
+        };
+    }
+
+    private void ToggleGroup(string key)
+    {
+        if (!collapsedGroups.Remove(key))
+        {
+            collapsedGroups.Add(key);
+        }
+    }
+
+    private void DismissToast()
+    {
+        toastTimer?.Cancel();
+        ClearOperationMessages();
+    }
+
+    private void ScheduleToastDismiss(int delayMilliseconds)
+    {
+        toastTimer?.Cancel();
+        var timer = toastTimer = new CancellationTokenSource();
+        var message = operationMessage;
+        _ = DismissToastLaterAsync(message, delayMilliseconds, timer.Token);
+    }
+
+    private async Task DismissToastLaterAsync(string? message, int delayMilliseconds, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(delayMilliseconds, cancellationToken);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        await InvokeAsync(() =>
+        {
+            if (ReferenceEquals(operationMessage, message) && !isExecutingAction)
+            {
+                operationMessage = null;
+                undoState = null;
+                StateHasChanged();
+            }
+        });
+    }
+
+    private async Task UndoAsync()
+    {
+        if (undoState is null || isExecutingAction)
+        {
+            return;
+        }
+
+        var undo = undoState;
+        await ExecuteReservationActionAsync(
+            () => RoomPlannerCommandService.UpdateReservationAsync(undo.ReservationId, undo.Previous, CancellationToken.None),
+            L["Change undone."],
+            closeEditor: false);
+
+        if (operationError is null && editor?.ReservationId == undo.ReservationId)
+        {
+            editor.RoomId = undo.Previous.RoomId;
+            editor.CheckIn = undo.Previous.CheckIn;
+            editor.CheckOut = undo.Previous.CheckOut;
+            await RefreshRateQuoteAsync();
+        }
+    }
+
+    private async Task ContextEditAsync(bool scrollToBilling)
+    {
+        if (contextMenu is null)
+        {
+            return;
+        }
+
+        var menu = contextMenu;
+        contextMenu = null;
+        await StartEditReservationAsync(menu.RoomId, menu.Reservation);
+        scrollEditorTarget = scrollToBilling ? ".billing-section" : ".reservation-editor";
+    }
+
+    private async Task ContextActionAsync(Func<Guid, Task<RoomPlannerReservation>> action, string successMessage)
+    {
+        if (contextMenu is null)
+        {
+            return;
+        }
+
+        var reservationId = contextMenu.Reservation.ReservationId;
+        contextMenu = null;
+        await ExecuteReservationActionAsync(
+            () => action(reservationId),
+            successMessage,
+            closeEditor: editor?.ReservationId == reservationId);
+    }
+
+    private Task ContextCheckInAsync() =>
+        ContextActionAsync(id => RoomPlannerCommandService.CheckInAsync(id, CancellationToken.None), L["Reservation checked in."]);
+
+    private Task ContextCheckOutAsync() =>
+        ContextActionAsync(id => RoomPlannerCommandService.CheckOutAsync(id, CancellationToken.None), L["Reservation checked out."]);
+
+    private async Task ContextCancelAsync()
+    {
+        if (contextMenu is null)
+        {
+            return;
+        }
+
+        var guestName = contextMenu.Reservation.GuestName;
+        if (!await JS.InvokeAsync<bool>("confirm", L["Cancel the reservation of {0}?", guestName].Value))
+        {
+            contextMenu = null;
+            return;
+        }
+
+        await ContextActionAsync(id => RoomPlannerCommandService.CancelAsync(id, CancellationToken.None), L["Reservation cancelled."]);
+    }
 
     private IEnumerable<RoomPlannerRoom> FilteredRooms => snapshot?.Rooms.Where(RoomMatchesFilters) ?? [];
-
-    private IReadOnlyList<string> RoomTypeOptions =>
-        snapshot?.Rooms
-            .Select(room => room.RoomType)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(roomType => roomType)
-            .ToList() ?? [];
 
     private string GetStatusLabel(ReservationStatus status) => status switch
     {
@@ -718,7 +1084,7 @@
         _ => "status-confirmed"
     };
 
-    private string GetReservationChipClass(RoomPlannerReservation reservation)
+    private string GetReservationChipClass(RoomPlannerReservation reservation, Placement placement)
     {
         var className = $"reservation-chip {GetStatusClass(reservation.Status)}";
         if (editor?.ReservationId == reservation.ReservationId)
@@ -726,9 +1092,14 @@
             className += " reservation-chip-selected";
         }
 
-        if (dragReservation?.ReservationId == reservation.ReservationId)
+        if (placement.ContinuesLeft)
         {
-            className += " reservation-chip-dragging";
+            className += " continues-left";
+        }
+
+        if (placement.ContinuesRight)
+        {
+            className += " continues-right";
         }
 
         return className;
@@ -761,7 +1132,7 @@
         return className;
     }
 
-    private string GetDayCellClass(DateOnly day, Guid roomId)
+    private string GetDayCellClass(DateOnly day)
     {
         var className = "timeline-day-cell";
         if (day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
@@ -774,131 +1145,125 @@
             className += " today";
         }
 
-        if (dragReservation is not null && dragTargetRoomId == roomId && dragTargetDate == day)
-        {
-            className += " drop-target";
-        }
-
-        return className;
-    }
-
-    private string GetTimelineRowClass(Guid roomId)
-    {
-        var className = "timeline-row";
-        if (dragReservation is not null && (dragReservation.Mode == DragMode.Move || dragReservation.RoomId == roomId))
-        {
-            className += " timeline-row-drag-active";
-        }
-
         return className;
     }
 
     private Placement? GetPlacement(RoomPlannerReservation reservation)
     {
         var viewEndDate = viewStartDate.AddDays(daysToShow);
-        var startOffset = Math.Max(0, reservation.CheckIn.DayNumber - viewStartDate.DayNumber);
-        var endOffset = Math.Min(daysToShow, reservation.CheckOut.DayNumber - viewStartDate.DayNumber);
-        var span = endOffset - startOffset;
 
-        if (reservation.CheckOut <= viewStartDate || reservation.CheckIn >= viewEndDate || span <= 0)
+        // A departure on the first visible day still shows its morning half.
+        if (reservation.CheckOut < viewStartDate || reservation.CheckIn >= viewEndDate)
         {
             return null;
         }
 
-        return new Placement(startOffset + 1, span);
+        var checkInOffset = reservation.CheckIn.DayNumber - viewStartDate.DayNumber;
+        var checkOutOffset = reservation.CheckOut.DayNumber - viewStartDate.DayNumber;
+        var continuesLeft = checkInOffset < 0;
+        var continuesRight = checkOutOffset >= daysToShow;
+        var lastLine = daysToShow * 2 + 1;
+
+        var startColumn = continuesLeft ? 1 : checkInOffset * 2 + 2;
+        var endColumn = continuesRight ? lastLine : checkOutOffset * 2 + 2;
+
+        return endColumn > startColumn
+            ? new Placement(startColumn, endColumn, continuesLeft, continuesRight)
+            : null;
     }
 
-    private void StartReservationMoveDrag(Guid roomId, RoomPlannerReservation reservation)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (isExecutingAction)
+        if (firstRender)
+        {
+            dotNetReference = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("plannerDrag.init", plannerPageElement, dotNetReference);
+        }
+
+        if (scrollEditorTarget is not null)
+        {
+            var target = scrollEditorTarget;
+            scrollEditorTarget = null;
+            await JS.InvokeVoidAsync("plannerDrag.scrollIntoView", target);
+        }
+
+        if (fitContextMenu)
+        {
+            fitContextMenu = false;
+            await JS.InvokeVoidAsync("plannerDrag.fitToViewport", ".context-menu");
+        }
+
+        // Success toasts fade out on their own; errors stay until dismissed.
+        if (operationMessage is not null && operationError is null && !ReferenceEquals(operationMessage, scheduledToastMessage))
+        {
+            scheduledToastMessage = operationMessage;
+            ScheduleToastDismiss(undoState is null ? 5000 : 10000);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        toastTimer?.Cancel();
+        toastTimer?.Dispose();
+        if (dotNetReference is null)
         {
             return;
         }
-
-        dragReservation = CreateDragContext(roomId, reservation, DragMode.Move);
-        ClearDragTarget();
-    }
-
-    private void StartReservationResizeDrag(Guid roomId, RoomPlannerReservation reservation, bool resizeStart)
-    {
-        if (isExecutingAction)
-        {
-            return;
-        }
-
-        dragReservation = CreateDragContext(
-            roomId,
-            reservation,
-            resizeStart ? DragMode.ResizeStart : DragMode.ResizeEnd);
-        ClearDragTarget();
-    }
-
-    private void EndReservationDrag()
-    {
-        ClearDragState();
-    }
-
-    private void SetDragTarget(Guid roomId, DateOnly day)
-    {
-        if (dragReservation is null)
-        {
-            return;
-        }
-
-        if (!CanDropToRoom(roomId))
-        {
-            ClearDragTarget();
-            return;
-        }
-
-        dragTargetRoomId = roomId;
-        dragTargetDate = day;
-    }
-
-    private void ClearDragTarget(Guid roomId, DateOnly day)
-    {
-        if (dragTargetRoomId == roomId && dragTargetDate == day)
-        {
-            ClearDragTarget();
-        }
-    }
-
-    private void ClearDragTarget()
-    {
-        dragTargetRoomId = null;
-        dragTargetDate = null;
-    }
-
-    private async Task DropReservationAsync(Guid roomId, DateOnly checkInDate)
-    {
-        if (dragReservation is null || isExecutingAction)
-        {
-            return;
-        }
-
-        var source = dragReservation;
-        Guid newRoomId;
-        DateOnly newCheckIn;
-        DateOnly newCheckOut;
-        string message;
 
         try
         {
-            (newRoomId, newCheckIn, newCheckOut, message) = ResolveDropResult(source, roomId, checkInDate);
+            await JS.InvokeVoidAsync("plannerDrag.dispose");
+        }
+        catch (JSDisconnectedException)
+        {
+        }
 
-            if (newCheckOut <= newCheckIn)
-            {
-                operationError = L["Check-out must be after check-in."];
-                return;
-            }
+        dotNetReference?.Dispose();
+    }
 
-            if (source.RoomId == newRoomId && source.CheckIn == newCheckIn && source.CheckOut == newCheckOut)
-            {
-                return;
-            }
+    [JSInvokable]
+    public async Task OnReservationDragCompleted(string reservationId, string mode, string roomId, string checkIn, string checkOut)
+    {
+        if (isExecutingAction || snapshot is null
+            || !Guid.TryParse(reservationId, out var parsedReservationId)
+            || !Guid.TryParse(roomId, out var newRoomId)
+            || !DateOnly.TryParseExact(checkIn, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var newCheckIn)
+            || !DateOnly.TryParseExact(checkOut, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var newCheckOut))
+        {
+            return;
+        }
 
+        var sourceRoom = snapshot.Rooms.FirstOrDefault(r => r.Reservations.Any(x => x.ReservationId == parsedReservationId));
+        var source = sourceRoom?.Reservations.First(x => x.ReservationId == parsedReservationId);
+        if (sourceRoom is null || source is null)
+        {
+            return;
+        }
+
+        ClearOperationMessages();
+
+        if (newCheckOut <= newCheckIn)
+        {
+            operationError = L["Check-out must be after check-in."];
+            StateHasChanged();
+            return;
+        }
+
+        if (sourceRoom.RoomId == newRoomId && source.CheckIn == newCheckIn && source.CheckOut == newCheckOut)
+        {
+            return;
+        }
+
+        var message = mode == "move" && sourceRoom.RoomId != newRoomId
+            ? L["Reservation moved to room {0}.", GetRoomLabel(newRoomId)]
+            : mode == "move"
+                ? L["Reservation moved to {0} - {1}.", newCheckIn.ToString("dd MMM"), newCheckOut.ToString("dd MMM")]
+                : L["Reservation stay updated to {0} - {1}.", newCheckIn.ToString("dd MMM"), newCheckOut.ToString("dd MMM")];
+
+        try
+        {
             isExecutingAction = true;
-            ClearOperationMessages();
+            StateHasChanged();
 
             var request = new RoomPlannerReservationUpsertRequest(
                 newRoomId,
@@ -911,6 +1276,9 @@
 
             await RoomPlannerCommandService.UpdateReservationAsync(source.ReservationId, request, CancellationToken.None);
             operationMessage = message;
+            undoState = new UndoState(
+                source.ReservationId,
+                request with { RoomId = sourceRoom.RoomId, CheckIn = source.CheckIn, CheckOut = source.CheckOut });
 
             if (editor?.ReservationId == source.ReservationId)
             {
@@ -939,76 +1307,7 @@
         finally
         {
             isExecutingAction = false;
-            ClearDragState();
-        }
-    }
-
-    private static DragReservationContext CreateDragContext(
-        Guid roomId,
-        RoomPlannerReservation reservation,
-        DragMode mode)
-    {
-        return new DragReservationContext(
-            roomId,
-            reservation.ReservationId,
-            reservation.GuestName,
-            reservation.CheckIn,
-            reservation.CheckOut,
-            reservation.Occupancy,
-            reservation.Status,
-            reservation.Notes,
-            mode);
-    }
-
-    private bool CanDropToRoom(Guid roomId)
-    {
-        if (dragReservation is null)
-        {
-            return false;
-        }
-
-        return dragReservation.Mode == DragMode.Move || dragReservation.RoomId == roomId;
-    }
-
-    private (Guid RoomId, DateOnly CheckIn, DateOnly CheckOut, string Message) ResolveDropResult(
-        DragReservationContext source,
-        Guid roomId,
-        DateOnly day)
-    {
-        switch (source.Mode)
-        {
-            case DragMode.ResizeStart:
-                if (roomId != source.RoomId)
-                {
-                    throw new ReservationValidationException(L["Drop resize handle on the same room row."]);
-                }
-
-                return (
-                    source.RoomId,
-                    day,
-                    source.CheckOut,
-                    L["Reservation stay updated to {0} - {1}.", day.ToString("dd MMM"), source.CheckOut.ToString("dd MMM")]);
-
-            case DragMode.ResizeEnd:
-                if (roomId != source.RoomId)
-                {
-                    throw new ReservationValidationException(L["Drop resize handle on the same room row."]);
-                }
-
-                var adjustedCheckout = day.AddDays(1);
-                return (
-                    source.RoomId,
-                    source.CheckIn,
-                    adjustedCheckout,
-                    L["Reservation stay updated to {0} - {1}.", source.CheckIn.ToString("dd MMM"), adjustedCheckout.ToString("dd MMM")]);
-
-            default:
-                var nights = source.CheckOut.DayNumber - source.CheckIn.DayNumber;
-                return (
-                    roomId,
-                    day,
-                    day.AddDays(nights),
-                    L["Reservation moved to room {0}.", GetRoomLabel(roomId)]);
+            StateHasChanged();
         }
     }
 
@@ -1073,7 +1372,6 @@
     {
         editor = null;
         isExecutingAction = false;
-        ClearDragState();
         billingSnapshot = null;
         billingReservationId = null;
         billingError = null;
@@ -1164,7 +1462,8 @@
 
     private async Task ExecuteReservationActionAsync(
         Func<Task<RoomPlannerReservation>> action,
-        string successMessage)
+        string successMessage,
+        bool closeEditor = true)
     {
         isExecutingAction = true;
         ClearOperationMessages();
@@ -1174,7 +1473,10 @@
             await action();
             operationMessage = successMessage;
             await ReloadAsync();
-            editor = null;
+            if (closeEditor)
+            {
+                editor = null;
+            }
         }
         catch (ReservationValidationException exception)
         {
@@ -1219,83 +1521,6 @@
         finally
         {
             isLoadingBilling = false;
-        }
-    }
-
-    private async Task AddRateRuleAsync()
-    {
-        if (snapshot is null)
-        {
-            return;
-        }
-
-        isExecutingRateEngine = true;
-        rateEngineError = null;
-        rateEngineMessage = null;
-
-        try
-        {
-            var request = new RoomRateRuleUpsertRequest(
-                rateRule.RoomType,
-                rateRule.StartDate,
-                rateRule.EndDate,
-                rateRule.OccupancyFrom,
-                rateRule.OccupancyTo,
-                rateRule.NightlyNetAmount,
-                rateRule.VatRatePercent,
-                rateRule.Priority);
-
-            await RateAvailabilityService.CreateRateRuleAsync(request, CancellationToken.None);
-            rateAvailabilitySnapshot = await RateAvailabilityService.GetSnapshotAsync(viewStartDate, daysToShow, CancellationToken.None);
-            rateEngineMessage = L["Rate rule saved."];
-        }
-        catch (ReservationValidationException exception)
-        {
-            rateEngineError = exception.Message;
-        }
-        finally
-        {
-            isExecutingRateEngine = false;
-        }
-    }
-
-    private async Task AddAvailabilityRuleAsync()
-    {
-        if (snapshot is null)
-        {
-            return;
-        }
-
-        isExecutingRateEngine = true;
-        rateEngineError = null;
-        rateEngineMessage = null;
-
-        try
-        {
-            var roomId = availabilityRule.Scope == "room" ? availabilityRule.RoomId : null;
-            var roomType = availabilityRule.Scope == "room" ? null : availabilityRule.RoomType;
-
-            var request = new RoomAvailabilityRuleUpsertRequest(
-                roomId,
-                roomType,
-                availabilityRule.StartDate,
-                availabilityRule.EndDate,
-                availabilityRule.StopSell,
-                availabilityRule.ClosedToArrival,
-                availabilityRule.ClosedToDeparture,
-                availabilityRule.MinStayNights);
-
-            await RateAvailabilityService.CreateAvailabilityRuleAsync(request, CancellationToken.None);
-            rateAvailabilitySnapshot = await RateAvailabilityService.GetSnapshotAsync(viewStartDate, daysToShow, CancellationToken.None);
-            rateEngineMessage = L["Availability rule saved."];
-        }
-        catch (ReservationValidationException exception)
-        {
-            rateEngineError = exception.Message;
-        }
-        finally
-        {
-            isExecutingRateEngine = false;
         }
     }
 
@@ -1499,51 +1724,11 @@
         billingInvoice.DueDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(14);
     }
 
-    private void EnsureRateEngineDefaults()
-    {
-        var firstRoomType = RoomTypeOptions.FirstOrDefault() ?? string.Empty;
-        var firstRoom = snapshot?.Rooms.FirstOrDefault();
-
-        if (string.IsNullOrWhiteSpace(rateRule.RoomType))
-        {
-            rateRule.RoomType = firstRoomType;
-        }
-
-        if (rateRule.StartDate == default)
-        {
-            rateRule.StartDate = viewStartDate;
-        }
-
-        if (rateRule.EndDate <= rateRule.StartDate)
-        {
-            rateRule.EndDate = rateRule.StartDate.AddDays(1);
-        }
-
-        if (availabilityRule.StartDate == default)
-        {
-            availabilityRule.StartDate = viewStartDate;
-        }
-
-        if (availabilityRule.EndDate <= availabilityRule.StartDate)
-        {
-            availabilityRule.EndDate = availabilityRule.StartDate.AddDays(1);
-        }
-
-        if (string.IsNullOrWhiteSpace(availabilityRule.RoomType))
-        {
-            availabilityRule.RoomType = firstRoomType;
-        }
-
-        if (availabilityRule.RoomId is null && firstRoom is not null)
-        {
-            availabilityRule.RoomId = firstRoom.RoomId;
-        }
-    }
-
     private void ClearOperationMessages()
     {
         operationError = null;
         operationMessage = null;
+        undoState = null;
     }
 
     private string GetPaymentMethodLabel(PaymentMethod method) => method switch
@@ -1556,69 +1741,10 @@
         _ => method.ToString()
     };
 
-    private static string FormatCurrency(decimal amount)
-    {
-        return amount.ToString("C", CultureInfo.CurrentCulture);
-    }
-
-    private string BuildOccupancyRange(int occupancyFrom, int? occupancyTo)
-    {
-        return occupancyTo is null || occupancyTo == occupancyFrom
-            ? occupancyFrom.ToString(CultureInfo.InvariantCulture)
-            : $"{occupancyFrom}-{occupancyTo.Value}";
-    }
-
-    private string BuildAvailabilityScope(RoomAvailabilityRuleDto rule)
-    {
-        if (rule.RoomId is not null)
-        {
-            return string.IsNullOrWhiteSpace(rule.RoomNumber)
-                ? L["Room-specific"]
-                : L["Room {0}", rule.RoomNumber];
-        }
-
-        return string.IsNullOrWhiteSpace(rule.RoomType)
-            ? L["Room type"]
-            : $"{L["Room type"]}: {rule.RoomType}";
-    }
-
-    private string BuildAvailabilityConstraintLabel(RoomAvailabilityRuleDto rule)
-    {
-        var constraints = new List<string>();
-        if (rule.StopSell)
-        {
-            constraints.Add(L["Stop sell"]);
-        }
-
-        if (rule.ClosedToArrival)
-        {
-            constraints.Add(L["Closed to arrival"]);
-        }
-
-        if (rule.ClosedToDeparture)
-        {
-            constraints.Add(L["Closed to departure"]);
-        }
-
-        if (rule.MinStayNights is not null)
-        {
-            constraints.Add(L["Min stay {0} nights", rule.MinStayNights.Value]);
-        }
-
-        return constraints.Count == 0 ? "-" : string.Join(", ", constraints);
-    }
-
     private string GetRoomLabel(Guid roomId)
     {
         var room = snapshot?.Rooms.FirstOrDefault(item => item.RoomId == roomId);
         return room?.RoomNumber ?? roomId.ToString();
-    }
-
-    private void ClearDragState()
-    {
-        dragReservation = null;
-        dragTargetRoomId = null;
-        dragTargetDate = null;
     }
 
     private bool RoomMatchesFilters(RoomPlannerRoom room)
@@ -1643,6 +1769,7 @@
             "confirmed" => room.Reservations.Any(reservation => reservation.Status == ReservationStatus.Confirmed),
             "maintenance" => room.Reservations.Any(reservation => reservation.Status == ReservationStatus.Maintenance),
             "blocked" => room.Reservations.Any(reservation => reservation.Status == ReservationStatus.Blocked),
+            "dirty" => room.HousekeepingStatus == HousekeepingStatus.Dirty,
             _ => true
         };
     }
@@ -1680,25 +1807,73 @@
         return snapshot.Rooms.Sum(room => room.Reservations.Count(reservation => reservation.CheckOut == viewStartDate));
     }
 
-    private readonly record struct Placement(int Start, int Span);
+    private readonly record struct Placement(int StartColumn, int EndColumn, bool ContinuesLeft, bool ContinuesRight);
 
-    private enum DragMode
+    private sealed record ContextMenuState(RoomPlannerReservation Reservation, Guid RoomId, string RoomLabel, double X, double Y);
+
+    private sealed record RoomMenuState(RoomPlannerRoom Room, double X, double Y);
+
+    private sealed record RoomGroup(string? Key, string Label, List<RoomPlannerRoom> Rooms);
+
+    private sealed record UndoState(Guid ReservationId, RoomPlannerReservationUpsertRequest Previous);
+
+    private readonly record struct DaySummary(int Free, int Occupied, int OutOfOrder, int OccupancyPercent);
+
+    private static DaySummary GetDaySummary(IReadOnlyList<RoomPlannerRoom> rooms, DateOnly day)
     {
-        Move = 0,
-        ResizeStart = 1,
-        ResizeEnd = 2
+        var occupied = 0;
+        var outOfOrder = 0;
+
+        foreach (var room in rooms)
+        {
+            var active = room.Reservations.FirstOrDefault(r =>
+                r.Status != ReservationStatus.Cancelled && r.CheckIn <= day && r.CheckOut > day);
+
+            if (active is null)
+            {
+                continue;
+            }
+
+            if (active.Status is ReservationStatus.Maintenance or ReservationStatus.Blocked)
+            {
+                outOfOrder++;
+            }
+            else
+            {
+                occupied++;
+            }
+        }
+
+        var sellable = rooms.Count - outOfOrder;
+        var percent = sellable > 0 ? (int)Math.Round(occupied * 100.0 / sellable) : 0;
+        return new DaySummary(sellable - occupied, occupied, outOfOrder, percent);
     }
 
-    private sealed record DragReservationContext(
-        Guid RoomId,
-        Guid ReservationId,
-        string GuestName,
-        DateOnly CheckIn,
-        DateOnly CheckOut,
-        int Occupancy,
-        ReservationStatus Status,
-        string? Notes,
-        DragMode Mode);
+    private static string GetSummaryCellClass(DaySummary summary) => summary.OccupancyPercent switch
+    {
+        >= 90 => "summary-cell summary-high",
+        >= 60 => "summary-cell summary-medium",
+        _ => "summary-cell summary-low"
+    };
+
+    [JSInvokable]
+    public void OnCreateRangeSelected(string roomId, string checkIn, string checkOut)
+    {
+        if (isExecutingAction
+            || !Guid.TryParse(roomId, out var parsedRoomId)
+            || !DateOnly.TryParseExact(checkIn, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedCheckIn)
+            || !DateOnly.TryParseExact(checkOut, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedCheckOut)
+            || parsedCheckOut <= parsedCheckIn)
+        {
+            return;
+        }
+
+        StartCreateReservation(parsedRoomId);
+        editor!.CheckIn = parsedCheckIn;
+        editor.CheckOut = parsedCheckOut;
+        scrollEditorTarget = ".reservation-editor";
+        StateHasChanged();
+    }
 
     private sealed class ReservationEditorModel
     {
@@ -1717,46 +1892,6 @@
         public ReservationStatus Status { get; set; }
 
         public string? Notes { get; set; }
-    }
-
-    private sealed class RateRuleModel
-    {
-        public string RoomType { get; set; } = string.Empty;
-
-        public DateOnly StartDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
-
-        public DateOnly EndDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1);
-
-        public int OccupancyFrom { get; set; } = 1;
-
-        public int? OccupancyTo { get; set; } = 2;
-
-        public decimal NightlyNetAmount { get; set; } = 120m;
-
-        public decimal VatRatePercent { get; set; } = 10m;
-
-        public int Priority { get; set; }
-    }
-
-    private sealed class AvailabilityRuleModel
-    {
-        public string Scope { get; set; } = "type";
-
-        public Guid? RoomId { get; set; }
-
-        public string RoomType { get; set; } = string.Empty;
-
-        public DateOnly StartDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
-
-        public DateOnly EndDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1);
-
-        public bool StopSell { get; set; }
-
-        public bool ClosedToArrival { get; set; }
-
-        public bool ClosedToDeparture { get; set; }
-
-        public int? MinStayNights { get; set; }
     }
 
     private sealed class BillingEntryModel

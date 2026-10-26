@@ -8,6 +8,8 @@ public sealed class HotelDbContext(DbContextOptions<HotelDbContext> options) : D
 {
     public DbSet<Room> Rooms => Set<Room>();
 
+    public DbSet<RoomCategory> RoomCategories => Set<RoomCategory>();
+
     public DbSet<Reservation> Reservations => Set<Reservation>();
 
     public DbSet<RoomRateRule> RoomRateRules => Set<RoomRateRule>();
@@ -30,7 +32,23 @@ public sealed class HotelDbContext(DbContextOptions<HotelDbContext> options) : D
         roomBuilder.HasKey(room => room.Id);
         roomBuilder.Property(room => room.Number).IsRequired().HasMaxLength(12);
         roomBuilder.Property(room => room.Type).IsRequired().HasMaxLength(40);
+        roomBuilder.Property(room => room.HousekeepingStatus).HasConversion<string>().HasMaxLength(16);
+        roomBuilder.Property(room => room.Features).HasMaxLength(300);
+        roomBuilder.Property(room => room.Notes).HasMaxLength(500);
         roomBuilder.HasIndex(room => room.Number).IsUnique();
+
+        var categoryBuilder = modelBuilder.Entity<RoomCategory>();
+        categoryBuilder.HasKey(category => category.Id);
+        categoryBuilder.Property(category => category.Code).IsRequired().HasMaxLength(10);
+        categoryBuilder.Property(category => category.Name).IsRequired().HasMaxLength(40);
+        categoryBuilder.Property(category => category.Description).HasMaxLength(500);
+        categoryBuilder.HasIndex(category => category.Code).IsUnique();
+        categoryBuilder.HasIndex(category => category.Name).IsUnique();
+        categoryBuilder.ToTable(table =>
+        {
+            table.HasCheckConstraint("CK_RoomCategories_StandardOccupancyPositive", "\"StandardOccupancy\" > 0");
+            table.HasCheckConstraint("CK_RoomCategories_MaxOccupancyValid", "\"MaxOccupancy\" >= \"StandardOccupancy\"");
+        });
 
         var reservationBuilder = modelBuilder.Entity<Reservation>();
         reservationBuilder.HasKey(reservation => reservation.Id);

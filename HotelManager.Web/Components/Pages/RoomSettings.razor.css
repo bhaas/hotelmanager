@@ -1,0 +1,382 @@
+.settings-page {
+    display: grid;
+    gap: 1rem;
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.settings-header h1 {
+    margin: 0;
+}
+
+.settings-subtitle {
+    margin: 0.4rem 0 0;
+    color: #5f6b7a;
+}
+
+.settings-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.settings-tabs {
+    display: flex;
+    gap: 0.25rem;
+    border-bottom: 1px solid #d9dee8;
+}
+
+.settings-tab {
+    border: 0;
+    background: transparent;
+    padding: 0.55rem 0.9rem;
+    font-weight: 600;
+    color: #5f6b7a;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.settings-tab:hover {
+    color: #1e293b;
+}
+
+.settings-tab.active {
+    color: #1b6ec2;
+    border-bottom-color: #1b6ec2;
+}
+
+.rule-count {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #475569;
+    background: #eef2f7;
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+}
+
+.tab-warning {
+    display: inline-grid;
+    place-items: center;
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 50%;
+    background: #f59e0b;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.inventory-card {
+    border: 1px solid #d9dee8;
+    border-radius: 12px;
+    background: #fff;
+    padding: 1rem;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.inventory-toolbar {
+    display: grid;
+    grid-template-columns: minmax(200px, 1fr) 200px 160px;
+    gap: 0.5rem;
+}
+
+.inventory-table {
+    margin: 0;
+    font-size: 0.88rem;
+}
+
+.inventory-table th {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #64748b;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.inventory-row {
+    cursor: pointer;
+}
+
+.inventory-row.archived td {
+    color: #94a3b8;
+}
+
+.inventory-row.selected td {
+    background: #e8f1fb;
+}
+
+.description-cell {
+    max-width: 320px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.feature-chip {
+    display: inline-block;
+    font-size: 0.72rem;
+    background: #eef2f7;
+    color: #334155;
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+    margin: 0 0.25rem 0.15rem 0;
+    border: 1px solid transparent;
+}
+
+.feature-chip.selectable {
+    cursor: pointer;
+    background: #fff;
+    border-color: #cbd5e1;
+}
+
+.feature-chip.selectable.selected {
+    background: #e8f1fb;
+    border-color: #1b6ec2;
+    color: #1b6ec2;
+}
+
+.feature-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: -0.25rem;
+}
+
+.category-code {
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 0.8rem;
+    background: #f1f5f9;
+    border-radius: 4px;
+    padding: 0.1rem 0.35rem;
+}
+
+.hk-dot {
+    display: inline-block;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    margin-right: 0.2rem;
+}
+
+.hk-clean {
+    background: #16a34a;
+}
+
+.hk-dirty {
+    background: #dc2626;
+}
+
+.hk-inspected {
+    background: #2563eb;
+}
+
+.status-badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    border-radius: 999px;
+    padding: 0.1rem 0.55rem;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.status-badge.active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.archived {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+.status-badge.warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.status-badge.warning:hover {
+    background: #fde68a;
+}
+
+.empty-hint {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.86rem;
+}
+
+.drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.25);
+    z-index: 1040;
+}
+
+.inventory-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(460px, 100vw);
+    background: #fff;
+    box-shadow: -8px 0 24px rgba(15, 23, 42, 0.18);
+    z-index: 1050;
+    display: flex;
+    flex-direction: column;
+    animation: drawer-in 0.18s ease-out;
+}
+
+@keyframes drawer-in {
+    from {
+        transform: translateX(40px);
+        opacity: 0;
+    }
+
+    to {
+        transform: none;
+        opacity: 1;
+    }
+}
+
+.inventory-drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.inventory-drawer-header h2 {
+    margin: 0;
+    font-size: 1.15rem;
+}
+
+.inventory-drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem 1.25rem;
+    display: grid;
+    gap: 1rem;
+    align-content: start;
+}
+
+.inventory-drawer-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.7rem;
+}
+
+.form-grid label {
+    display: grid;
+    gap: 0.2rem;
+    margin: 0;
+}
+
+.form-grid label > span {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.span-2 {
+    grid-column: 1 / -1;
+}
+
+.drawer-hint {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.85rem;
+}
+
+.drawer-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.drawer-stats > div {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    display: grid;
+}
+
+.drawer-stats strong {
+    font-size: 1.2rem;
+}
+
+.drawer-stats span {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.series-preview {
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+    font-size: 0.85rem;
+    display: grid;
+    gap: 0.2rem;
+}
+
+.series-preview-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.danger-zone {
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 0.75rem;
+    display: grid;
+    gap: 0.4rem;
+}
+
+.danger-zone h3 {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.danger-zone p {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #64748b;
+}
+
+.danger-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 720px) {
+    .inventory-toolbar {
+        grid-template-columns: 1fr;
+    }
+}
+
+.inventory-drawer:focus {
+    outline: none;
+}

@@ -17,7 +17,7 @@ public sealed class RoomPlannerCommandService(
 
         return await ExecuteSerializableAsync(async dbContext =>
         {
-            await EnsureRoomExistsAsync(dbContext, request.RoomId, cancellationToken);
+            await EnsureRoomBookableAsync(dbContext, request, cancellationToken);
             await EnsureNoOverlappingReservationAsync(
                 dbContext,
                 request.RoomId,
@@ -56,7 +56,7 @@ public sealed class RoomPlannerCommandService(
                 .SingleOrDefaultAsync(existingReservation => existingReservation.Id == reservationId, cancellationToken)
                 ?? throw new ReservationNotFoundException(localizer["Reservation not found."]);
 
-            await EnsureRoomExistsAsync(dbContext, request.RoomId, cancellationToken);
+            await EnsureRoomBookableAsync(dbContext, request, cancellationToken);
             await EnsureNoOverlappingReservationAsync(
                 dbContext,
                 request.RoomId,
@@ -129,10 +129,35 @@ public sealed class RoomPlannerCommandService(
             }
 
             reservation.Status = targetStatus;
+
+            // A departed room needs cleaning before it can be sold again.
+            if (targetStatus == ReservationStatus.CheckedOut)
+            {
+                var room = await dbContext.Rooms.SingleAsync(item => item.Id == reservation.RoomId, cancellationToken);
+                room.HousekeepingStatus = HousekeepingStatus.Dirty;
+            }
+
             await dbContext.SaveChangesAsync(cancellationToken);
 
             return MapReservation(reservation);
         }, cancellationToken);
+    }
+
+    public async Task<RoomHousekeepingState> SetHousekeepingStatusAsync(Guid roomId, HousekeepingStatus status, CancellationToken cancellationToken)
+    {
+        if (!Enum.IsDefined(status))
+        {
+            throw new ReservationValidationException(localizer["Unknown housekeeping status."]);
+        }
+
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        var room = await dbContext.Rooms.SingleOrDefaultAsync(item => item.Id == roomId, cancellationToken)
+            ?? throw new ReservationNotFoundException(localizer["Selected room does not exist."]);
+
+        room.HousekeepingStatus = status;
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return new RoomHousekeepingState(room.Id, room.Number, room.HousekeepingStatus);
     }
 
     private void ValidateRequest(RoomPlannerReservationUpsertRequest request)
@@ -198,12 +223,38 @@ public sealed class RoomPlannerCommandService(
         }
     }
 
-    private async Task EnsureRoomExistsAsync(HotelDbContext dbContext, Guid roomId, CancellationToken cancellationToken)
+    private async Task EnsureRoomBookableAsync(
+        HotelDbContext dbContext,
+        RoomPlannerReservationUpsertRequest request,
+        CancellationToken cancellationToken)
     {
-        var roomExists = await dbContext.Rooms.AnyAsync(room => room.Id == roomId, cancellationToken);
-        if (!roomExists)
+        var room = await dbContext.Rooms
+            .AsNoTracking()
+            .Where(item => item.Id == request.RoomId)
+            .Select(item => new
+            {
+                item.Number,
+                item.IsActive,
+                MaxOccupancy = dbContext.RoomCategories
+                    .Where(category => category.Name == item.Type)
+                    .Select(category => (int?)category.MaxOccupancy)
+                    .FirstOrDefault()
+            })
+            .SingleOrDefaultAsync(cancellationToken)
+            ?? throw new ReservationValidationException(localizer["Selected room does not exist."]);
+
+        if (!room.IsActive)
         {
-            throw new ReservationValidationException(localizer["Selected room does not exist."]);
+            throw new ReservationValidationException(localizer["Room {0} is archived and cannot be booked.", room.Number]);
+        }
+
+        var isGuestStay = request.Status is not (ReservationStatus.Blocked or ReservationStatus.Maintenance);
+        if (isGuestStay && room.MaxOccupancy is { } maxOccupancy && request.Occupancy > maxOccupancy)
+        {
+            throw new ReservationValidationException(localizer[
+                "Room {0} allows at most {1} guest(s).",
+                room.Number,
+                maxOccupancy]);
         }
     }
 

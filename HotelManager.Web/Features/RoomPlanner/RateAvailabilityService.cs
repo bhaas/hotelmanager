@@ -14,7 +14,7 @@ public sealed class RateAvailabilityService(
 
     public async Task<RoomRateAvailabilitySnapshot> GetSnapshotAsync(DateOnly startDate, int days, CancellationToken cancellationToken)
     {
-        var normalizedDays = Math.Clamp(days, 1, 62);
+        var normalizedDays = Math.Clamp(days, 1, 92);
         var endDate = startDate.AddDays(normalizedDays);
 
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -45,6 +45,7 @@ public sealed class RateAvailabilityService(
         ValidateRateRuleRequest(request);
 
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+        await EnsureCategoryExistsAsync(dbContext, request.RoomType.Trim(), cancellationToken);
         var rateRule = new RoomRateRule
         {
             Id = Guid.NewGuid(),
@@ -81,6 +82,11 @@ public sealed class RateAvailabilityService(
         }
 
         var roomType = string.IsNullOrWhiteSpace(request.RoomType) ? null : request.RoomType.Trim();
+        if (request.RoomId is null && roomType is not null)
+        {
+            await EnsureCategoryExistsAsync(dbContext, roomType, cancellationToken);
+        }
+
         if (request.RoomId is not null && roomType is null)
         {
             roomType = room?.Type;
@@ -208,6 +214,14 @@ public sealed class RateAvailabilityService(
             true,
             null,
             nightlyBreakdown);
+    }
+
+    private async Task EnsureCategoryExistsAsync(HotelDbContext dbContext, string roomType, CancellationToken cancellationToken)
+    {
+        if (!await dbContext.RoomCategories.AnyAsync(category => category.Name == roomType, cancellationToken))
+        {
+            throw new ReservationValidationException(localizer["Room category {0} does not exist.", roomType]);
+        }
     }
 
     private async Task<RoomAvailabilityEvaluation> EvaluateAvailabilityInternalAsync(

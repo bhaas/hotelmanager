@@ -67,6 +67,16 @@ public static class RoomPlannerApi
                 () => commandService.CancelAsync(reservationId, cancellationToken));
         });
 
+        group.MapPut("/rooms/{roomId:guid}/housekeeping", async (
+            Guid roomId,
+            RoomHousekeepingUpdateRequest request,
+            IRoomPlannerCommandService commandService,
+            CancellationToken cancellationToken) =>
+        {
+            return await ExecuteRoomPlannerOperationAsync(
+                () => commandService.SetHousekeepingStatusAsync(roomId, request.Status, cancellationToken));
+        });
+
         group.MapGet("/rate-availability", async (
             DateOnly? startDate,
             int? days,

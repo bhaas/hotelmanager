@@ -1,3 +1,5 @@
+using HotelManager.Web.Domain;
+
 namespace HotelManager.Web.Features.RoomPlanner;
 
 public interface IRoomPlannerCommandService
@@ -11,4 +13,6 @@ public interface IRoomPlannerCommandService
     Task<RoomPlannerReservation> CheckOutAsync(Guid reservationId, CancellationToken cancellationToken);
 
     Task<RoomPlannerReservation> CancelAsync(Guid reservationId, CancellationToken cancellationToken);
+
+    Task<RoomHousekeepingState> SetHousekeepingStatusAsync(Guid roomId, HousekeepingStatus status, CancellationToken cancellationToken);
 }

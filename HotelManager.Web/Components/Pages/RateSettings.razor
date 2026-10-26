@@ -1,0 +1,405 @@
+@page "/settings/rates"
+@using System.Globalization
+@rendermode InteractiveServer
+@inject IRoomPlannerQueryService RoomPlannerQueryService
+@inject IRateAvailabilityService RateAvailabilityService
+@inject IRoomInventoryService RoomInventoryService
+@inject IStringLocalizer<RateSettings> L
+
+<PageTitle>@L["Rates & availability"]</PageTitle>
+
+<div class="settings-page">
+    <header class="settings-header">
+        <div>
+            <h1>@L["Rates & availability"]</h1>
+            <p class="settings-subtitle">@L["Configure room rates and sell restrictions for cloud-ready pricing control."]</p>
+        </div>
+        <div class="settings-period">
+            <label class="form-label" for="rules-from">@L["Show rules active from"]</label>
+            <InputDate id="rules-from" class="form-control" @bind-Value="periodStart" @bind-Value:after="ReloadRulesAsync" />
+            <small>@periodStart.ToString("dd.MM.yyyy") – @periodStart.AddDays(PeriodDays).ToString("dd.MM.yyyy")</small>
+        </div>
+    </header>
+
+    @if (errorMessage is not null)
+    {
+        <div class="alert alert-danger" role="alert">@errorMessage</div>
+    }
+    else if (successMessage is not null)
+    {
+        <div class="alert alert-success" role="alert">@successMessage</div>
+    }
+
+    @if (rooms is null)
+    {
+        <p><em>@L["Loading..."]</em></p>
+    }
+    else
+    {
+        <div class="rate-engine-grid">
+            <section class="rate-engine-card">
+                <h2>@L["Add room rate rule"]</h2>
+                <div class="rate-engine-form-grid">
+                    <label>
+                        <span>@L["Room type"]</span>
+                        <select class="form-select" @bind="rateRule.RoomType">
+                            @foreach (var roomType in RoomTypeOptions)
+                            {
+                                <option value="@roomType">@roomType</option>
+                            }
+                        </select>
+                    </label>
+                    <label>
+                        <span>@L["Priority"]</span>
+                        <InputNumber class="form-control" @bind-Value="rateRule.Priority" />
+                    </label>
+                    <label>
+                        <span>@L["From"]</span>
+                        <InputDate class="form-control" @bind-Value="rateRule.StartDate" />
+                    </label>
+                    <label>
+                        <span>@L["Until (exclusive)"]</span>
+                        <InputDate class="form-control" @bind-Value="rateRule.EndDate" />
+                    </label>
+                    <label>
+                        <span>@L["Occupancy from"]</span>
+                        <InputNumber class="form-control" @bind-Value="rateRule.OccupancyFrom" />
+                    </label>
+                    <label>
+                        <span>@L["Occupancy to"]</span>
+                        <InputNumber class="form-control" @bind-Value="rateRule.OccupancyTo" />
+                    </label>
+                    <label>
+                        <span>@L["Net / night (EUR)"]</span>
+                        <InputNumber class="form-control" @bind-Value="rateRule.NightlyNetAmount" />
+                    </label>
+                    <label>
+                        <span>@L["VAT"]</span>
+                        <InputSelect class="form-select" @bind-Value="rateRule.VatRatePercent">
+                            <option value="20">20%</option>
+                            <option value="13">13%</option>
+                            <option value="10">10%</option>
+                            <option value="0">0%</option>
+                        </InputSelect>
+                    </label>
+                </div>
+                <button type="button" class="btn btn-primary" @onclick="AddRateRuleAsync" disabled="@isSaving">
+                    @L["Save rate rule"]
+                </button>
+            </section>
+
+            <section class="rate-engine-card">
+                <h2>@L["Add availability rule"]</h2>
+                <div class="rate-engine-form-grid">
+                    <label>
+                        <span>@L["Scope"]</span>
+                        <InputSelect class="form-select" @bind-Value="availabilityRule.Scope">
+                            <option value="type">@L["By room type"]</option>
+                            <option value="room">@L["By specific room"]</option>
+                        </InputSelect>
+                    </label>
+                    <label>
+                        @if (availabilityRule.Scope == "room")
+                        {
+                            <span>@L["Room"]</span>
+                            <InputSelect class="form-select" @bind-Value="availabilityRule.RoomId">
+                                @foreach (var room in rooms.OrderBy(item => item.RoomNumber))
+                                {
+                                    <option value="@room.RoomId">@room.RoomNumber · @room.RoomType</option>
+                                }
+                            </InputSelect>
+                        }
+                        else
+                        {
+                            <span>@L["Room type"]</span>
+                            <select class="form-select" @bind="availabilityRule.RoomType">
+                                @foreach (var roomType in RoomTypeOptions)
+                                {
+                                    <option value="@roomType">@roomType</option>
+                                }
+                            </select>
+                        }
+                    </label>
+                    <label>
+                        <span>@L["From"]</span>
+                        <InputDate class="form-control" @bind-Value="availabilityRule.StartDate" />
+                    </label>
+                    <label>
+                        <span>@L["Until (exclusive)"]</span>
+                        <InputDate class="form-control" @bind-Value="availabilityRule.EndDate" />
+                    </label>
+                    <label>
+                        <span>@L["Minimum stay (nights)"]</span>
+                        <InputNumber class="form-control" @bind-Value="availabilityRule.MinStayNights" />
+                    </label>
+                    <div class="rate-engine-checkboxes">
+                        <label><input type="checkbox" @bind="availabilityRule.StopSell" /> @L["Stop sell"]</label>
+                        <label><input type="checkbox" @bind="availabilityRule.ClosedToArrival" /> @L["Closed to arrival"]</label>
+                        <label><input type="checkbox" @bind="availabilityRule.ClosedToDeparture" /> @L["Closed to departure"]</label>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary" @onclick="AddAvailabilityRuleAsync" disabled="@isSaving">
+                    @L["Save availability rule"]
+                </button>
+            </section>
+        </div>
+
+        @if (snapshot is not null)
+        {
+            <div class="rate-engine-ledger">
+                <section class="rate-engine-card">
+                    <h2>@L["Rate rules"] <span class="rule-count">@snapshot.RateRules.Count</span></h2>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>@L["Room type"]</th>
+                                <th>@L["Period"]</th>
+                                <th>@L["Occupancy"]</th>
+                                <th class="text-end">@L["Net / night"]</th>
+                                <th>@L["VAT"]</th>
+                                <th>@L["Priority"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var rule in snapshot.RateRules)
+                            {
+                                <tr>
+                                    <td>@rule.RoomType</td>
+                                    <td>@rule.StartDate.ToString("dd.MM.yyyy") – @rule.EndDate.ToString("dd.MM.yyyy")</td>
+                                    <td>@BuildOccupancyRange(rule.OccupancyFrom, rule.OccupancyTo)</td>
+                                    <td class="text-end">@MoneyFormatter.Format(rule.NightlyNetAmount, rule.Currency)</td>
+                                    <td>@rule.VatRatePercent.ToString("0.##")%</td>
+                                    <td>@rule.Priority</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </section>
+
+                <section class="rate-engine-card">
+                    <h2>@L["Availability rules"] <span class="rule-count">@snapshot.AvailabilityRules.Count</span></h2>
+                    @if (snapshot.AvailabilityRules.Count == 0)
+                    {
+                        <p class="empty-hint">@L["No availability restrictions in this period."]</p>
+                    }
+                    else
+                    {
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>@L["Scope"]</th>
+                                    <th>@L["Period"]</th>
+                                    <th>@L["Constraints"]</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var rule in snapshot.AvailabilityRules)
+                                {
+                                    <tr>
+                                        <td>@BuildAvailabilityScope(rule)</td>
+                                        <td>@rule.StartDate.ToString("dd.MM.yyyy") – @rule.EndDate.ToString("dd.MM.yyyy")</td>
+                                        <td>@BuildAvailabilityConstraintLabel(rule)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </section>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    // Matches the maximum window supported by IRateAvailabilityService.GetSnapshotAsync.
+    private const int PeriodDays = 92;
+
+    private IReadOnlyList<RoomPlannerRoom>? rooms;
+    private IReadOnlyList<RoomCategoryItem> categories = [];
+    private RoomRateAvailabilitySnapshot? snapshot;
+    private DateOnly periodStart = DateOnly.FromDateTime(DateTime.UtcNow);
+    private bool isSaving;
+    private string? errorMessage;
+    private string? successMessage;
+    private RateRuleModel rateRule = new();
+    private AvailabilityRuleModel availabilityRule = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var plannerSnapshot = await RoomPlannerQueryService.GetSnapshotAsync(periodStart, 1, CancellationToken.None);
+            rooms = plannerSnapshot.Rooms;
+            categories = await RoomInventoryService.GetCategoriesAsync(CancellationToken.None);
+            EnsureDefaults();
+            await ReloadRulesAsync();
+        }
+        catch (Exception exception)
+        {
+            errorMessage = exception.Message;
+        }
+    }
+
+    private IReadOnlyList<string> RoomTypeOptions =>
+        categories.Select(category => category.Name).ToList();
+
+    private async Task ReloadRulesAsync()
+    {
+        snapshot = await RateAvailabilityService.GetSnapshotAsync(periodStart, PeriodDays, CancellationToken.None);
+    }
+
+    private async Task AddRateRuleAsync()
+    {
+        await SaveAsync(async () =>
+        {
+            var request = new RoomRateRuleUpsertRequest(
+                rateRule.RoomType,
+                rateRule.StartDate,
+                rateRule.EndDate,
+                rateRule.OccupancyFrom,
+                rateRule.OccupancyTo,
+                rateRule.NightlyNetAmount,
+                rateRule.VatRatePercent,
+                rateRule.Priority);
+
+            await RateAvailabilityService.CreateRateRuleAsync(request, CancellationToken.None);
+            return L["Rate rule saved."];
+        });
+    }
+
+    private async Task AddAvailabilityRuleAsync()
+    {
+        await SaveAsync(async () =>
+        {
+            var isRoomScope = availabilityRule.Scope == "room";
+            var request = new RoomAvailabilityRuleUpsertRequest(
+                isRoomScope ? availabilityRule.RoomId : null,
+                isRoomScope ? null : availabilityRule.RoomType,
+                availabilityRule.StartDate,
+                availabilityRule.EndDate,
+                availabilityRule.StopSell,
+                availabilityRule.ClosedToArrival,
+                availabilityRule.ClosedToDeparture,
+                availabilityRule.MinStayNights);
+
+            await RateAvailabilityService.CreateAvailabilityRuleAsync(request, CancellationToken.None);
+            return L["Availability rule saved."];
+        });
+    }
+
+    private async Task SaveAsync(Func<Task<string>> action)
+    {
+        isSaving = true;
+        errorMessage = null;
+        successMessage = null;
+
+        try
+        {
+            successMessage = await action();
+            await ReloadRulesAsync();
+        }
+        catch (ReservationValidationException exception)
+        {
+            errorMessage = exception.Message;
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void EnsureDefaults()
+    {
+        var firstRoomType = RoomTypeOptions.FirstOrDefault() ?? string.Empty;
+        rateRule.RoomType = firstRoomType;
+        availabilityRule.RoomType = firstRoomType;
+        availabilityRule.RoomId = rooms?.FirstOrDefault()?.RoomId;
+    }
+
+    private static string BuildOccupancyRange(int occupancyFrom, int? occupancyTo)
+    {
+        return occupancyTo is null || occupancyTo == occupancyFrom
+            ? occupancyFrom.ToString(CultureInfo.InvariantCulture)
+            : $"{occupancyFrom}-{occupancyTo.Value}";
+    }
+
+    private string BuildAvailabilityScope(RoomAvailabilityRuleDto rule)
+    {
+        if (rule.RoomId is not null)
+        {
+            return string.IsNullOrWhiteSpace(rule.RoomNumber)
+                ? L["Room-specific"]
+                : L["Room {0}", rule.RoomNumber];
+        }
+
+        return string.IsNullOrWhiteSpace(rule.RoomType)
+            ? L["Room type"]
+            : $"{L["Room type"]}: {rule.RoomType}";
+    }
+
+    private string BuildAvailabilityConstraintLabel(RoomAvailabilityRuleDto rule)
+    {
+        var constraints = new List<string>();
+        if (rule.StopSell)
+        {
+            constraints.Add(L["Stop sell"]);
+        }
+
+        if (rule.ClosedToArrival)
+        {
+            constraints.Add(L["Closed to arrival"]);
+        }
+
+        if (rule.ClosedToDeparture)
+        {
+            constraints.Add(L["Closed to departure"]);
+        }
+
+        if (rule.MinStayNights is not null)
+        {
+            constraints.Add(L["Min stay {0} nights", rule.MinStayNights.Value]);
+        }
+
+        return constraints.Count == 0 ? "-" : string.Join(", ", constraints);
+    }
+
+    private sealed class RateRuleModel
+    {
+        public string RoomType { get; set; } = string.Empty;
+
+        public DateOnly StartDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        public DateOnly EndDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1);
+
+        public int OccupancyFrom { get; set; } = 1;
+
+        public int? OccupancyTo { get; set; } = 2;
+
+        public decimal NightlyNetAmount { get; set; } = 120m;
+
+        public decimal VatRatePercent { get; set; } = 10m;
+
+        public int Priority { get; set; }
+    }
+
+    private sealed class AvailabilityRuleModel
+    {
+        public string Scope { get; set; } = "type";
+
+        public Guid? RoomId { get; set; }
+
+        public string RoomType { get; set; } = string.Empty;
+
+        public DateOnly StartDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        public DateOnly EndDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(1);
+
+        public bool StopSell { get; set; }
+
+        public bool ClosedToArrival { get; set; }
+
+        public bool ClosedToDeparture { get; set; }
+
+        public int? MinStayNights { get; set; }
+    }
+}

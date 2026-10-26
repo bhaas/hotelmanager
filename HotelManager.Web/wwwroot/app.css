@@ -58,3 +58,70 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+/* Room planner hover card (appended to <body> by planner-drag.js, so it cannot use scoped CSS). */
+.planner-hover-card {
+    position: fixed;
+    z-index: 1080;
+    min-width: 220px;
+    max-width: 320px;
+    padding: 0.6rem 0.75rem;
+    background: #fff;
+    border: 1px solid #d9dee8;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18);
+    font-size: 0.82rem;
+    color: #1f2937;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.12s ease, transform 0.12s ease;
+    visibility: hidden;
+}
+
+.planner-hover-card.visible {
+    opacity: 1;
+    transform: none;
+    visibility: visible;
+}
+
+.planner-hover-card .phc-header {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-weight: 700;
+    font-size: 0.92rem;
+}
+
+.planner-hover-card .phc-badge {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    flex: none;
+    background: #007ea7;
+}
+
+.planner-hover-card .phc-badge.status-checked-in { background: #1f9d55; }
+.planner-hover-card .phc-badge.status-checked-out { background: #64748b; }
+.planner-hover-card .phc-badge.status-cancelled { background: #9ca3af; }
+.planner-hover-card .phc-badge.status-maintenance { background: #f59e0b; }
+.planner-hover-card .phc-badge.status-blocked { background: #b91c1c; }
+
+.planner-hover-card .phc-status {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+    margin: 0.1rem 0 0.35rem;
+}
+
+.planner-hover-card .phc-line {
+    line-height: 1.45;
+}
+
+.planner-hover-card .phc-notes {
+    margin-top: 0.4rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid #edf0f6;
+    color: #475569;
+    white-space: pre-wrap;
+}

@@ -105,9 +105,6 @@
   <data name="Floor {0}" xml:space="preserve">
     <value>Etage {0}</value>
   </data>
-  <data name="Reservation" xml:space="preserve">
-    <value>Reservierung</value>
-  </data>
   <data name="In house" xml:space="preserve">
     <value>Im Haus</value>
   </data>
@@ -146,15 +143,6 @@
   </data>
   <data name="Reservation moved to room {0}." xml:space="preserve">
     <value>Reservierung nach Zimmer {0} verschoben.</value>
-  </data>
-  <data name="Drag to change check-in date" xml:space="preserve">
-    <value>Ziehen, um das Anreisedatum zu ändern</value>
-  </data>
-  <data name="Drag to change check-out date" xml:space="preserve">
-    <value>Ziehen, um das Abreisedatum zu ändern</value>
-  </data>
-  <data name="Drop resize handle on the same room row." xml:space="preserve">
-    <value>Zum Verlängern oder Verkürzen den Griff in derselben Zimmerzeile ablegen.</value>
   </data>
   <data name="Reservation stay updated to {0} - {1}." xml:space="preserve">
     <value>Reservierungszeitraum auf {0} - {1} aktualisiert.</value>
@@ -261,80 +249,14 @@
   <data name="Invoice {0} issued and downloaded via browser fallback." xml:space="preserve">
     <value>Rechnung {0} wurde ausgestellt und über den Browser-Download gespeichert.</value>
   </data>
-  <data name="Rate &amp; availability engine" xml:space="preserve">
-    <value>Preis- &amp; Verfügbarkeits-Engine</value>
-  </data>
-  <data name="Configure room rates and sell restrictions for cloud-ready pricing control." xml:space="preserve">
-    <value>Konfigurieren Sie Zimmerpreise und Verkaufssperren für cloudfähige Preissteuerung.</value>
-  </data>
-  <data name="Add room rate rule" xml:space="preserve">
-    <value>Zimmerpreisregel hinzufügen</value>
-  </data>
-  <data name="Save rate rule" xml:space="preserve">
-    <value>Preisregel speichern</value>
-  </data>
-  <data name="Add availability rule" xml:space="preserve">
-    <value>Verfügbarkeitsregel hinzufügen</value>
-  </data>
   <data name="By room type" xml:space="preserve">
     <value>Nach Zimmertyp</value>
-  </data>
-  <data name="By specific room" xml:space="preserve">
-    <value>Nach konkretem Zimmer</value>
-  </data>
-  <data name="Stop sell" xml:space="preserve">
-    <value>Verkauf stoppen</value>
-  </data>
-  <data name="Closed to arrival" xml:space="preserve">
-    <value>Anreise gesperrt</value>
-  </data>
-  <data name="Closed to departure" xml:space="preserve">
-    <value>Abreise gesperrt</value>
-  </data>
-  <data name="Save availability rule" xml:space="preserve">
-    <value>Verfügbarkeitsregel speichern</value>
-  </data>
-  <data name="Rate rules" xml:space="preserve">
-    <value>Preisregeln</value>
-  </data>
-  <data name="Availability rules" xml:space="preserve">
-    <value>Verfügbarkeitsregeln</value>
-  </data>
-  <data name="Room type" xml:space="preserve">
-    <value>Zimmertyp</value>
-  </data>
-  <data name="Period" xml:space="preserve">
-    <value>Zeitraum</value>
   </data>
   <data name="Occupancy" xml:space="preserve">
     <value>Belegung</value>
   </data>
-  <data name="Net / night" xml:space="preserve">
-    <value>Netto / Nacht</value>
-  </data>
-  <data name="Priority" xml:space="preserve">
-    <value>Priorität</value>
-  </data>
-  <data name="Scope" xml:space="preserve">
-    <value>Geltungsbereich</value>
-  </data>
-  <data name="Constraints" xml:space="preserve">
-    <value>Einschränkungen</value>
-  </data>
-  <data name="Room-specific" xml:space="preserve">
-    <value>Zimmerspezifisch</value>
-  </data>
   <data name="Room {0}" xml:space="preserve">
     <value>Zimmer {0}</value>
-  </data>
-  <data name="Min stay {0} nights" xml:space="preserve">
-    <value>Mindestaufenthalt {0} Nächte</value>
-  </data>
-  <data name="Rate rule saved." xml:space="preserve">
-    <value>Preisregel gespeichert.</value>
-  </data>
-  <data name="Availability rule saved." xml:space="preserve">
-    <value>Verfügbarkeitsregel gespeichert.</value>
   </data>
   <data name="guests" xml:space="preserve">
     <value>Gäste</value>
@@ -365,5 +287,113 @@
   </data>
   <data name="The invoice PDF could not be opened automatically." xml:space="preserve">
     <value>Die Rechnungs-PDF konnte nicht automatisch geöffnet werden.</value>
+  </data>
+  <data name="Row density" xml:space="preserve">
+    <value>Zeilendichte</value>
+  </data>
+  <data name="Compact" xml:space="preserve">
+    <value>Kompakt</value>
+  </data>
+  <data name="Comfortable" xml:space="preserve">
+    <value>Komfortabel</value>
+  </data>
+  <data name="Free / occupancy" xml:space="preserve">
+    <value>Frei / Auslastung</value>
+  </data>
+  <data name="{0} free · {1} occupied · {2} out of order" xml:space="preserve">
+    <value>{0} frei · {1} belegt · {2} außer Betrieb</value>
+  </data>
+  <data name="Tip: drag across empty days to create a reservation. Right-click a reservation for actions." xml:space="preserve">
+    <value>Tipp: Über freie Tage ziehen, um eine Reservierung anzulegen. Rechtsklick auf eine Reservierung für Aktionen.</value>
+  </data>
+  <data name="Zoom" xml:space="preserve">
+    <value>Zoom</value>
+  </data>
+  <data name="Zoom out (Ctrl + mouse wheel)" xml:space="preserve">
+    <value>Verkleinern (Strg + Mausrad)</value>
+  </data>
+  <data name="Zoom in (Ctrl + mouse wheel)" xml:space="preserve">
+    <value>Vergrößern (Strg + Mausrad)</value>
+  </data>
+  <data name="Show availability by room type" xml:space="preserve">
+    <value>Verfügbarkeit nach Zimmertyp anzeigen</value>
+  </data>
+  <data name="Open reservation" xml:space="preserve">
+    <value>Reservierung öffnen</value>
+  </data>
+  <data name="Billing &amp; invoice" xml:space="preserve">
+    <value>Abrechnung &amp; Rechnung</value>
+  </data>
+  <data name="Cancel reservation" xml:space="preserve">
+    <value>Reservierung stornieren</value>
+  </data>
+  <data name="Cancel the reservation of {0}?" xml:space="preserve">
+    <value>Reservierung von {0} wirklich stornieren?</value>
+  </data>
+  <data name="By floor" xml:space="preserve">
+    <value>Nach Etage</value>
+  </data>
+  <data name="Change undone." xml:space="preserve">
+    <value>Änderung rückgängig gemacht.</value>
+  </data>
+  <data name="Clean" xml:space="preserve">
+    <value>Sauber</value>
+  </data>
+  <data name="Close (Esc)" xml:space="preserve">
+    <value>Schließen (Esc)</value>
+  </data>
+  <data name="Dirty" xml:space="preserve">
+    <value>Schmutzig</value>
+  </data>
+  <data name="Group" xml:space="preserve">
+    <value>Gruppieren</value>
+  </data>
+  <data name="Housekeeping" xml:space="preserve">
+    <value>Housekeeping</value>
+  </data>
+  <data name="Housekeeping: {0}" xml:space="preserve">
+    <value>Housekeeping: {0}</value>
+  </data>
+  <data name="Inspected" xml:space="preserve">
+    <value>Kontrolliert</value>
+  </data>
+  <data name="New reservation in this room" xml:space="preserve">
+    <value>Neue Reservierung in diesem Zimmer</value>
+  </data>
+  <data name="No grouping" xml:space="preserve">
+    <value>Keine Gruppierung</value>
+  </data>
+  <data name="Occupancy must be greater than 0." xml:space="preserve">
+    <value>Die Belegung muss größer als 0 sein.</value>
+  </data>
+  <data name="Room {0} marked as {1}." xml:space="preserve">
+    <value>Zimmer {0} als „{1}“ markiert.</value>
+  </data>
+  <data name="Rooms to clean" xml:space="preserve">
+    <value>Zu reinigende Zimmer</value>
+  </data>
+  <data name="Undo" xml:space="preserve">
+    <value>Rückgängig</value>
+  </data>
+  <data name="Undo (Ctrl+Z)" xml:space="preserve">
+    <value>Rückgängig (Strg+Z)</value>
+  </data>
+  <data name="{0} night" xml:space="preserve">
+    <value>{0} Nacht</value>
+  </data>
+  <data name="{0} nights" xml:space="preserve">
+    <value>{0} Nächte</value>
+  </data>
+  <data name="Reservation moved to {0} - {1}." xml:space="preserve">
+    <value>Reservierung verschoben auf {0} - {1}.</value>
+  </data>
+  <data name="Edit room..." xml:space="preserve">
+    <value>Zimmer bearbeiten...</value>
+  </data>
+  <data name="This room allows at most {0} guest(s)." xml:space="preserve">
+    <value>Dieses Zimmer erlaubt höchstens {0} Gast/Gäste.</value>
+  </data>
+  <data name="max. {0}" xml:space="preserve">
+    <value>max. {0}</value>
   </data>
 </root>

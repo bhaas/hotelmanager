@@ -1,0 +1,114 @@
+.settings-page {
+    display: grid;
+    gap: 1rem;
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.settings-header h1 {
+    margin: 0;
+}
+
+.settings-subtitle {
+    margin: 0.4rem 0 0;
+    color: #5f6b7a;
+}
+
+.settings-period {
+    display: grid;
+    gap: 0.2rem;
+    min-width: 220px;
+}
+
+.settings-period .form-label {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.settings-period small {
+    color: #64748b;
+}
+
+.rate-engine-grid,
+.rate-engine-ledger {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 1rem;
+    align-items: start;
+}
+
+.rate-engine-card {
+    border: 1px solid #d9dee8;
+    border-radius: 12px;
+    background: #fff;
+    padding: 1rem;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.rate-engine-card h2 {
+    margin: 0;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.rule-count {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #475569;
+    background: #eef2f7;
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+}
+
+.rate-engine-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.6rem;
+}
+
+.rate-engine-form-grid label {
+    display: grid;
+    gap: 0.2rem;
+    margin: 0;
+}
+
+.rate-engine-form-grid label > span {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #475569;
+}
+
+.rate-engine-checkboxes {
+    display: grid;
+    gap: 0.25rem;
+    align-content: end;
+    font-size: 0.85rem;
+}
+
+.rate-engine-checkboxes label {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+.rate-engine-card .table {
+    margin: 0;
+    font-size: 0.86rem;
+}
+
+.empty-hint {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.86rem;
+}

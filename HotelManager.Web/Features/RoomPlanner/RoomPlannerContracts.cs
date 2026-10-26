@@ -12,7 +12,14 @@ public sealed record RoomPlannerRoom(
     string RoomNumber,
     string RoomType,
     int Floor,
-    IReadOnlyList<RoomPlannerReservation> Reservations);
+    IReadOnlyList<RoomPlannerReservation> Reservations,
+    HousekeepingStatus HousekeepingStatus,
+    string? Features = null,
+    int MaxOccupancy = 0);
+
+public sealed record RoomHousekeepingUpdateRequest(HousekeepingStatus Status);
+
+public sealed record RoomHousekeepingState(Guid RoomId, string RoomNumber, HousekeepingStatus Status);
 
 public sealed record RoomPlannerReservation(
     Guid ReservationId,

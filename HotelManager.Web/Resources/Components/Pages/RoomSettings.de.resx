@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="+ Add room series" xml:space="preserve">
+    <value>+ Zimmerserie anlegen</value>
+  </data>
+  <data name="+ New category" xml:space="preserve">
+    <value>+ Neue Kategorie</value>
+  </data>
+  <data name="+ New room" xml:space="preserve">
+    <value>+ Neues Zimmer</value>
+  </data>
+  <data name="A category can only be deleted when no rooms use it. Its rate and availability rules are deleted as well." xml:space="preserve">
+    <value>Eine Kategorie kann nur gelöscht werden, wenn ihr keine Zimmer zugeordnet sind. Ihre Preis- und Verfügbarkeitsregeln werden ebenfalls gelöscht.</value>
+  </data>
+  <data name="Active" xml:space="preserve">
+    <value>Aktiv</value>
+  </data>
+  <data name="Active rates" xml:space="preserve">
+    <value>Aktive Preise</value>
+  </data>
+  <data name="Add room series" xml:space="preserve">
+    <value>Zimmerserie anlegen</value>
+  </data>
+  <data name="All" xml:space="preserve">
+    <value>Alle</value>
+  </data>
+  <data name="All categories" xml:space="preserve">
+    <value>Alle Kategorien</value>
+  </data>
+  <data name="Archive room" xml:space="preserve">
+    <value>Zimmer archivieren</value>
+  </data>
+  <data name="Archived" xml:space="preserve">
+    <value>Archiviert</value>
+  </data>
+  <data name="Archived rooms disappear from the room planner but keep their history. Only rooms that were never booked can be deleted." xml:space="preserve">
+    <value>Archivierte Zimmer verschwinden aus dem Zimmerplan, behalten aber ihre Historie. Nur Zimmer, die nie gebucht wurden, können gelöscht werden.</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="Categories without an active rate rule" xml:space="preserve">
+    <value>Kategorien ohne aktive Preisregel</value>
+  </data>
+  <data name="Category" xml:space="preserve">
+    <value>Kategorie</value>
+  </data>
+  <data name="Category {0} created." xml:space="preserve">
+    <value>Kategorie {0} angelegt.</value>
+  </data>
+  <data name="Category {0} deleted." xml:space="preserve">
+    <value>Kategorie {0} gelöscht.</value>
+  </data>
+  <data name="Category {0} saved." xml:space="preserve">
+    <value>Kategorie {0} gespeichert.</value>
+  </data>
+  <data name="Clean" xml:space="preserve">
+    <value>Sauber</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="Code" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="Comma separated, e.g. Balcony, Sea view" xml:space="preserve">
+    <value>Kommagetrennt, z. B. Balkon, Meerblick</value>
+  </data>
+  <data name="Create category" xml:space="preserve">
+    <value>Kategorie anlegen</value>
+  </data>
+  <data name="Create room" xml:space="preserve">
+    <value>Zimmer anlegen</value>
+  </data>
+  <data name="Create several rooms of the same category at once, e.g. a new floor." xml:space="preserve">
+    <value>Mehrere Zimmer derselben Kategorie auf einmal anlegen, z. B. eine neue Etage.</value>
+  </data>
+  <data name="Create {0} room(s)" xml:space="preserve">
+    <value>{0} Zimmer anlegen</value>
+  </data>
+  <data name="Delete category" xml:space="preserve">
+    <value>Kategorie löschen</value>
+  </data>
+  <data name="Delete category {0}? Its rate and availability rules will be deleted as well." xml:space="preserve">
+    <value>Kategorie {0} löschen? Ihre Preis- und Verfügbarkeitsregeln werden ebenfalls gelöscht.</value>
+  </data>
+  <data name="Delete room" xml:space="preserve">
+    <value>Zimmer löschen</value>
+  </data>
+  <data name="Delete room {0} permanently?" xml:space="preserve">
+    <value>Zimmer {0} endgültig löschen?</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Beschreibung</value>
+  </data>
+  <data name="Dirty" xml:space="preserve">
+    <value>Schmutzig</value>
+  </data>
+  <data name="Enter a valid number range (max. {0} rooms)." xml:space="preserve">
+    <value>Geben Sie einen gültigen Nummernbereich ein (max. {0} Zimmer).</value>
+  </data>
+  <data name="Features" xml:space="preserve">
+    <value>Ausstattung</value>
+  </data>
+  <data name="Filter by category" xml:space="preserve">
+    <value>Nach Kategorie filtern</value>
+  </data>
+  <data name="Filter by status" xml:space="preserve">
+    <value>Nach Status filtern</value>
+  </data>
+  <data name="Floor" xml:space="preserve">
+    <value>Etage</value>
+  </data>
+  <data name="From number" xml:space="preserve">
+    <value>Von Nummer</value>
+  </data>
+  <data name="Housekeeping" xml:space="preserve">
+    <value>Housekeeping</value>
+  </data>
+  <data name="Inspected" xml:space="preserve">
+    <value>Kontrolliert</value>
+  </data>
+  <data name="Internal notes" xml:space="preserve">
+    <value>Interne Notizen</value>
+  </data>
+  <data name="Lifecycle" xml:space="preserve">
+    <value>Lebenszyklus</value>
+  </data>
+  <data name="Loading..." xml:space="preserve">
+    <value>Wird geladen...</value>
+  </data>
+  <data name="Maintain your room inventory and the categories used for rates, availability and occupancy limits." xml:space="preserve">
+    <value>Pflegen Sie Ihren Zimmerbestand und die Kategorien für Preise, Verfügbarkeit und Belegungsgrenzen.</value>
+  </data>
+  <data name="Max guests" xml:space="preserve">
+    <value>Max. Gäste</value>
+  </data>
+  <data name="Max. occupancy" xml:space="preserve">
+    <value>Max. Belegung</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="New category" xml:space="preserve">
+    <value>Neue Kategorie</value>
+  </data>
+  <data name="New room" xml:space="preserve">
+    <value>Neues Zimmer</value>
+  </data>
+  <data name="No rate – set up" xml:space="preserve">
+    <value>Kein Preis – einrichten</value>
+  </data>
+  <data name="No room categories yet. Create a category before adding rooms." xml:space="preserve">
+    <value>Noch keine Zimmerkategorien. Legen Sie eine Kategorie an, bevor Sie Zimmer hinzufügen.</value>
+  </data>
+  <data name="No rooms match the current filter." xml:space="preserve">
+    <value>Keine Zimmer entsprechen dem aktuellen Filter.</value>
+  </data>
+  <data name="Prefix (optional)" xml:space="preserve">
+    <value>Präfix (optional)</value>
+  </data>
+  <data name="Preview" xml:space="preserve">
+    <value>Vorschau</value>
+  </data>
+  <data name="Reactivate room" xml:space="preserve">
+    <value>Zimmer reaktivieren</value>
+  </data>
+  <data name="Renaming a category also updates its rooms, rate rules and availability rules." xml:space="preserve">
+    <value>Das Umbenennen einer Kategorie aktualisiert auch ihre Zimmer, Preis- und Verfügbarkeitsregeln.</value>
+  </data>
+  <data name="Reservations in total" xml:space="preserve">
+    <value>Reservierungen gesamt</value>
+  </data>
+  <data name="Room" xml:space="preserve">
+    <value>Zimmer</value>
+  </data>
+  <data name="Room categories" xml:space="preserve">
+    <value>Zimmerkategorien</value>
+  </data>
+  <data name="Room number" xml:space="preserve">
+    <value>Zimmernummer</value>
+  </data>
+  <data name="Room {0}" xml:space="preserve">
+    <value>Zimmer {0}</value>
+  </data>
+  <data name="Room {0} archived." xml:space="preserve">
+    <value>Zimmer {0} archiviert.</value>
+  </data>
+  <data name="Room {0} created." xml:space="preserve">
+    <value>Zimmer {0} angelegt.</value>
+  </data>
+  <data name="Room {0} deleted." xml:space="preserve">
+    <value>Zimmer {0} gelöscht.</value>
+  </data>
+  <data name="Room {0} reactivated." xml:space="preserve">
+    <value>Zimmer {0} reaktiviert.</value>
+  </data>
+  <data name="Room {0} saved." xml:space="preserve">
+    <value>Zimmer {0} gespeichert.</value>
+  </data>
+  <data name="Rooms" xml:space="preserve">
+    <value>Zimmer</value>
+  </data>
+  <data name="Rooms &amp; categories" xml:space="preserve">
+    <value>Zimmer &amp; Kategorien</value>
+  </data>
+  <data name="Rooms (active / total)" xml:space="preserve">
+    <value>Zimmer (aktiv / gesamt)</value>
+  </data>
+  <data name="Rooms with reservation history cannot be deleted. Archive it instead." xml:space="preserve">
+    <value>Zimmer mit Reservierungshistorie können nicht gelöscht werden. Archivieren Sie es stattdessen.</value>
+  </data>
+  <data name="Save changes" xml:space="preserve">
+    <value>Änderungen speichern</value>
+  </data>
+  <data name="Saving..." xml:space="preserve">
+    <value>Wird gespeichert...</value>
+  </data>
+  <data name="Search number, category or feature..." xml:space="preserve">
+    <value>Nummer, Kategorie oder Ausstattung suchen...</value>
+  </data>
+  <data name="Search rooms" xml:space="preserve">
+    <value>Zimmer suchen</value>
+  </data>
+  <data name="Sort order" xml:space="preserve">
+    <value>Sortierung</value>
+  </data>
+  <data name="Standard / max guests" xml:space="preserve">
+    <value>Standard / max. Gäste</value>
+  </data>
+  <data name="Standard occupancy" xml:space="preserve">
+    <value>Standardbelegung</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="The change could not be saved: {0}" xml:space="preserve">
+    <value>Die Änderung konnte nicht gespeichert werden: {0}</value>
+  </data>
+  <data name="To number" xml:space="preserve">
+    <value>Bis Nummer</value>
+  </data>
+  <data name="Upcoming" xml:space="preserve">
+    <value>Kommend</value>
+  </data>
+  <data name="Upcoming reservations" xml:space="preserve">
+    <value>Kommende Reservierungen</value>
+  </data>
+  <data name="e.g. A" xml:space="preserve">
+    <value>z. B. A</value>
+  </data>
+  <data name="e.g. DLX" xml:space="preserve">
+    <value>z. B. DLX</value>
+  </data>
+  <data name="e.g. Deluxe King" xml:space="preserve">
+    <value>z. B. Deluxe King</value>
+  </data>
+  <data name="e.g. Faces the street, extra bed possible" xml:space="preserve">
+    <value>z. B. Straßenseite, Zustellbett möglich</value>
+  </data>
+  <data name="{0} ({1}, max. {2} guests)" xml:space="preserve">
+    <value>{0} ({1}, max. {2} Gäste)</value>
+  </data>
+  <data name="{0} room(s) created." xml:space="preserve">
+    <value>{0} Zimmer angelegt.</value>
+  </data>
+  <data name="{0} room(s):" xml:space="preserve">
+    <value>{0} Zimmer:</value>
+  </data>
+  <data name="Balcony" xml:space="preserve">
+    <value>Balkon</value>
+  </data>
+  <data name="Sea view" xml:space="preserve">
+    <value>Meerblick</value>
+  </data>
+  <data name="Accessible" xml:space="preserve">
+    <value>Barrierefrei</value>
+  </data>
+  <data name="Non-smoking" xml:space="preserve">
+    <value>Nichtraucher</value>
+  </data>
+  <data name="Connecting door" xml:space="preserve">
+    <value>Verbindungstür</value>
+  </data>
+  <data name="Bathtub" xml:space="preserve">
+    <value>Badewanne</value>
+  </data>
+  <data name="Kitchenette" xml:space="preserve">
+    <value>Kochnische</value>
+  </data>
+</root>
