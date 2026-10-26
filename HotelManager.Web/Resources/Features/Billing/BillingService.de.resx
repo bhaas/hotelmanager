@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="At least one charge is required before payment can be posted." xml:space="preserve">
+    <value>Vor der Zahlungsverbuchung ist mindestens eine Belastung erforderlich.</value>
+  </data>
+  <data name="Payment exceeds the open folio amount." xml:space="preserve">
+    <value>Die Zahlung übersteigt den offenen Folio-Betrag.</value>
+  </data>
+  <data name="Cannot issue invoice without folio entries." xml:space="preserve">
+    <value>Ohne Folio-Positionen kann keine Rechnung ausgestellt werden.</value>
+  </data>
+  <data name="An invoice has already been issued for this reservation." xml:space="preserve">
+    <value>Für diese Reservierung wurde bereits eine Rechnung ausgestellt.</value>
+  </data>
+  <data name="Invoice not found." xml:space="preserve">
+    <value>Rechnung wurde nicht gefunden.</value>
+  </data>
+  <data name="Reservation not found." xml:space="preserve">
+    <value>Reservierung wurde nicht gefunden.</value>
+  </data>
+  <data name="Description is required." xml:space="preserve">
+    <value>Beschreibung ist erforderlich.</value>
+  </data>
+  <data name="Description cannot exceed 250 characters." xml:space="preserve">
+    <value>Beschreibung darf maximal 250 Zeichen enthalten.</value>
+  </data>
+  <data name="Quantity must be greater than 0." xml:space="preserve">
+    <value>Menge muss größer als 0 sein.</value>
+  </data>
+  <data name="Unit net amount cannot be negative." xml:space="preserve">
+    <value>Netto-Einzelpreis darf nicht negativ sein.</value>
+  </data>
+  <data name="VAT rate must be one of the supported Austrian rates (0, 10, 13, 20)." xml:space="preserve">
+    <value>Der MwSt.-Satz muss einer der unterstützten österreichischen Sätze sein (0, 10, 13, 20).</value>
+  </data>
+  <data name="A tax exemption reason is required for 0% VAT lines." xml:space="preserve">
+    <value>Für Positionen mit 0 % MwSt. ist ein Steuerbefreiungsgrund erforderlich.</value>
+  </data>
+  <data name="Payment amount must be greater than 0." xml:space="preserve">
+    <value>Der Zahlungsbetrag muss größer als 0 sein.</value>
+  </data>
+  <data name="Cash payment exceeds the configured AML limit. Use non-cash settlement or split according to policy." xml:space="preserve">
+    <value>Die Barzahlung überschreitet das konfigurierte AML-Limit. Verwenden Sie eine unbare Zahlung oder teilen Sie die Zahlung gemäß Richtlinie auf.</value>
+  </data>
+  <data name="Payment reference cannot exceed 80 characters." xml:space="preserve">
+    <value>Der Zahlungsreferenztext darf maximal 80 Zeichen enthalten.</value>
+  </data>
+  <data name="Buyer name is required on invoices." xml:space="preserve">
+    <value>Auf Rechnungen ist ein Käufername erforderlich.</value>
+  </data>
+  <data name="Buyer address is required on invoices." xml:space="preserve">
+    <value>Auf Rechnungen ist eine Käuferadresse erforderlich.</value>
+  </data>
+</root>

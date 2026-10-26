@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: hotelmanager-postgres
+    environment:
+      POSTGRES_DB: hotelmanager
+      POSTGRES_USER: hotelapp
+      POSTGRES_PASSWORD: hotelapp
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hotelapp -d hotelmanager"]
+      interval: 5s
+      timeout: 5s
+      retries: 8
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hotelmanager-web
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      HOTEL_DB_CONNECTION: Host=postgres;Port=5432;Database=hotelmanager;Username=hotelapp;Password=hotelapp
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:

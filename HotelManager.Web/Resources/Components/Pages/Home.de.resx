@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Hotel Manager" xml:space="preserve">
+    <value>Hotel-Manager</value>
+  </data>
+  <data name="Cloud-ready hotel management foundation built on .NET 10, Blazor, and PostgreSQL." xml:space="preserve">
+    <value>Cloud-fähige Hotelmanagement-Basis auf .NET 10, Blazor und PostgreSQL.</value>
+  </data>
+  <data name="The first implemented module is the room planner board." xml:space="preserve">
+    <value>Das erste implementierte Modul ist das Zimmerplanungs-Board.</value>
+  </data>
+  <data name="Open Room Planner" xml:space="preserve">
+    <value>Zimmerplaner öffnen</value>
+  </data>
+</root>

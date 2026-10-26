@@ -1,0 +1,33 @@
+@using System.Globalization
+@inject NavigationManager Navigation
+
+<div class="language-selector">
+    <a href="@BuildSetCultureUrl("en")"
+       class="@GetLinkClass("en")"
+       aria-label="Switch language to English">
+        EN
+    </a>
+    <a href="@BuildSetCultureUrl("de")"
+       class="@GetLinkClass("de")"
+       aria-label="Sprache auf Deutsch umstellen">
+        DE
+    </a>
+</div>
+
+@code {
+    private string CurrentCulture => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+
+    private string BuildSetCultureUrl(string culture)
+    {
+        var relativePath = Navigation.ToBaseRelativePath(Navigation.Uri);
+        var localPath = string.IsNullOrWhiteSpace(relativePath) ? "/" : $"/{relativePath}";
+        return $"/set-culture?culture={Uri.EscapeDataString(culture)}&redirectUri={Uri.EscapeDataString(localPath)}";
+    }
+
+    private string GetLinkClass(string culture)
+    {
+        return CurrentCulture.Equals(culture, StringComparison.OrdinalIgnoreCase)
+            ? "language-link active"
+            : "language-link";
+    }
+}

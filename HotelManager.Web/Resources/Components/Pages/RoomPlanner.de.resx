@@ -1,0 +1,369 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Room Planner" xml:space="preserve">
+    <value>Zimmerplaner</value>
+  </data>
+  <data name="High-density planning board inspired by modern hotel operations dashboards." xml:space="preserve">
+    <value>Dichtes Planungsboard, inspiriert von modernen Hotel-Operations-Dashboards.</value>
+  </data>
+  <data name="Previous" xml:space="preserve">
+    <value>Zurück</value>
+  </data>
+  <data name="Today" xml:space="preserve">
+    <value>Heute</value>
+  </data>
+  <data name="Next" xml:space="preserve">
+    <value>Weiter</value>
+  </data>
+  <data name="New reservation" xml:space="preserve">
+    <value>Neue Reservierung</value>
+  </data>
+  <data name="Window" xml:space="preserve">
+    <value>Zeitraum</value>
+  </data>
+  <data name="{0} days" xml:space="preserve">
+    <value>{0} Tage</value>
+  </data>
+  <data name="Search room, type, or guest" xml:space="preserve">
+    <value>Nach Zimmer, Typ oder Gast suchen</value>
+  </data>
+  <data name="All statuses" xml:space="preserve">
+    <value>Alle Status</value>
+  </data>
+  <data name="Rooms in planner" xml:space="preserve">
+    <value>Zimmer im Planer</value>
+  </data>
+  <data name="In house ({0})" xml:space="preserve">
+    <value>Im Haus ({0})</value>
+  </data>
+  <data name="Arrivals ({0})" xml:space="preserve">
+    <value>Anreisen ({0})</value>
+  </data>
+  <data name="Departures ({0})" xml:space="preserve">
+    <value>Abreisen ({0})</value>
+  </data>
+  <data name="Create reservation" xml:space="preserve">
+    <value>Reservierung erstellen</value>
+  </data>
+  <data name="Edit reservation" xml:space="preserve">
+    <value>Reservierung bearbeiten</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="Room" xml:space="preserve">
+    <value>Zimmer</value>
+  </data>
+  <data name="Guest / block name" xml:space="preserve">
+    <value>Gast / Blockname</value>
+  </data>
+  <data name="Check-in" xml:space="preserve">
+    <value>Anreise</value>
+  </data>
+  <data name="Check-out" xml:space="preserve">
+    <value>Abreise</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Notes" xml:space="preserve">
+    <value>Notizen</value>
+  </data>
+  <data name="Check-out must be after check-in." xml:space="preserve">
+    <value>Die Abreise muss nach der Anreise liegen.</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Speichern</value>
+  </data>
+  <data name="Check in" xml:space="preserve">
+    <value>Einchecken</value>
+  </data>
+  <data name="Check out" xml:space="preserve">
+    <value>Auschecken</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Stornieren</value>
+  </data>
+  <data name="Failed to load room planner data: {0}" xml:space="preserve">
+    <value>Zimmerplaner-Daten konnten nicht geladen werden: {0}</value>
+  </data>
+  <data name="Loading room planner..." xml:space="preserve">
+    <value>Zimmerplaner wird geladen ...</value>
+  </data>
+  <data name="Floor {0}" xml:space="preserve">
+    <value>Etage {0}</value>
+  </data>
+  <data name="Reservation" xml:space="preserve">
+    <value>Reservierung</value>
+  </data>
+  <data name="In house" xml:space="preserve">
+    <value>Im Haus</value>
+  </data>
+  <data name="Checked out" xml:space="preserve">
+    <value>Ausgecheckt</value>
+  </data>
+  <data name="Cancelled" xml:space="preserve">
+    <value>Storniert</value>
+  </data>
+  <data name="Maintenance" xml:space="preserve">
+    <value>Wartung</value>
+  </data>
+  <data name="Blocked" xml:space="preserve">
+    <value>Blockiert</value>
+  </data>
+  <data name="Confirmed" xml:space="preserve">
+    <value>Bestätigt</value>
+  </data>
+  <data name="to" xml:space="preserve">
+    <value>bis</value>
+  </data>
+  <data name="Reservation created." xml:space="preserve">
+    <value>Reservierung erstellt.</value>
+  </data>
+  <data name="Reservation updated." xml:space="preserve">
+    <value>Reservierung aktualisiert.</value>
+  </data>
+  <data name="Reservation checked in." xml:space="preserve">
+    <value>Reservierung eingecheckt.</value>
+  </data>
+  <data name="Reservation checked out." xml:space="preserve">
+    <value>Reservierung ausgecheckt.</value>
+  </data>
+  <data name="Reservation cancelled." xml:space="preserve">
+    <value>Reservierung storniert.</value>
+  </data>
+  <data name="Reservation moved to room {0}." xml:space="preserve">
+    <value>Reservierung nach Zimmer {0} verschoben.</value>
+  </data>
+  <data name="Drag to change check-in date" xml:space="preserve">
+    <value>Ziehen, um das Anreisedatum zu ändern</value>
+  </data>
+  <data name="Drag to change check-out date" xml:space="preserve">
+    <value>Ziehen, um das Abreisedatum zu ändern</value>
+  </data>
+  <data name="Drop resize handle on the same room row." xml:space="preserve">
+    <value>Zum Verlängern oder Verkürzen den Griff in derselben Zimmerzeile ablegen.</value>
+  </data>
+  <data name="Reservation stay updated to {0} - {1}." xml:space="preserve">
+    <value>Reservierungszeitraum auf {0} - {1} aktualisiert.</value>
+  </data>
+  <data name="Billing &amp; Invoicing (AT / EU)" xml:space="preserve">
+    <value>Abrechnung &amp; Rechnungsstellung (AT / EU)</value>
+  </data>
+  <data name="Loading billing data..." xml:space="preserve">
+    <value>Abrechnungsdaten werden geladen ...</value>
+  </data>
+  <data name="Net" xml:space="preserve">
+    <value>Netto</value>
+  </data>
+  <data name="VAT" xml:space="preserve">
+    <value>MwSt.</value>
+  </data>
+  <data name="Gross" xml:space="preserve">
+    <value>Brutto</value>
+  </data>
+  <data name="Open" xml:space="preserve">
+    <value>Offen</value>
+  </data>
+  <data name="Add folio entry" xml:space="preserve">
+    <value>Folio-Position hinzufügen</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Beschreibung</value>
+  </data>
+  <data name="Charge" xml:space="preserve">
+    <value>Belastung</value>
+  </data>
+  <data name="Credit" xml:space="preserve">
+    <value>Gutschrift</value>
+  </data>
+  <data name="Tax exemption reason (required for 0% VAT)" xml:space="preserve">
+    <value>Steuerbefreiungsgrund (bei 0 % MwSt. erforderlich)</value>
+  </data>
+  <data name="Add entry" xml:space="preserve">
+    <value>Position hinzufügen</value>
+  </data>
+  <data name="Register payment" xml:space="preserve">
+    <value>Zahlung erfassen</value>
+  </data>
+  <data name="Card" xml:space="preserve">
+    <value>Karte</value>
+  </data>
+  <data name="Bank transfer" xml:space="preserve">
+    <value>Überweisung</value>
+  </data>
+  <data name="Online" xml:space="preserve">
+    <value>Online</value>
+  </data>
+  <data name="Cash" xml:space="preserve">
+    <value>Bar</value>
+  </data>
+  <data name="Voucher" xml:space="preserve">
+    <value>Gutschein</value>
+  </data>
+  <data name="Reference" xml:space="preserve">
+    <value>Referenz</value>
+  </data>
+  <data name="Post payment" xml:space="preserve">
+    <value>Zahlung buchen</value>
+  </data>
+  <data name="Issue invoice" xml:space="preserve">
+    <value>Rechnung ausstellen</value>
+  </data>
+  <data name="Buyer name" xml:space="preserve">
+    <value>Käufername</value>
+  </data>
+  <data name="Buyer address" xml:space="preserve">
+    <value>Käuferadresse</value>
+  </data>
+  <data name="Buyer VAT ID (optional)" xml:space="preserve">
+    <value>Käufer-USt-ID (optional)</value>
+  </data>
+  <data name="Folio entries" xml:space="preserve">
+    <value>Folio-Positionen</value>
+  </data>
+  <data name="Date" xml:space="preserve">
+    <value>Datum</value>
+  </data>
+  <data name="Payments" xml:space="preserve">
+    <value>Zahlungen</value>
+  </data>
+  <data name="Method" xml:space="preserve">
+    <value>Art</value>
+  </data>
+  <data name="Amount" xml:space="preserve">
+    <value>Betrag</value>
+  </data>
+  <data name="Folio entry added." xml:space="preserve">
+    <value>Folio-Position hinzugefügt.</value>
+  </data>
+  <data name="Payment posted." xml:space="preserve">
+    <value>Zahlung gebucht.</value>
+  </data>
+  <data name="Invoice {0} issued." xml:space="preserve">
+    <value>Rechnung {0} ausgestellt.</value>
+  </data>
+  <data name="Invoice export cancelled." xml:space="preserve">
+    <value>Rechnungsexport wurde abgebrochen.</value>
+  </data>
+  <data name="Invoice {0} issued and downloaded via browser fallback." xml:space="preserve">
+    <value>Rechnung {0} wurde ausgestellt und über den Browser-Download gespeichert.</value>
+  </data>
+  <data name="Rate &amp; availability engine" xml:space="preserve">
+    <value>Preis- &amp; Verfügbarkeits-Engine</value>
+  </data>
+  <data name="Configure room rates and sell restrictions for cloud-ready pricing control." xml:space="preserve">
+    <value>Konfigurieren Sie Zimmerpreise und Verkaufssperren für cloudfähige Preissteuerung.</value>
+  </data>
+  <data name="Add room rate rule" xml:space="preserve">
+    <value>Zimmerpreisregel hinzufügen</value>
+  </data>
+  <data name="Save rate rule" xml:space="preserve">
+    <value>Preisregel speichern</value>
+  </data>
+  <data name="Add availability rule" xml:space="preserve">
+    <value>Verfügbarkeitsregel hinzufügen</value>
+  </data>
+  <data name="By room type" xml:space="preserve">
+    <value>Nach Zimmertyp</value>
+  </data>
+  <data name="By specific room" xml:space="preserve">
+    <value>Nach konkretem Zimmer</value>
+  </data>
+  <data name="Stop sell" xml:space="preserve">
+    <value>Verkauf stoppen</value>
+  </data>
+  <data name="Closed to arrival" xml:space="preserve">
+    <value>Anreise gesperrt</value>
+  </data>
+  <data name="Closed to departure" xml:space="preserve">
+    <value>Abreise gesperrt</value>
+  </data>
+  <data name="Save availability rule" xml:space="preserve">
+    <value>Verfügbarkeitsregel speichern</value>
+  </data>
+  <data name="Rate rules" xml:space="preserve">
+    <value>Preisregeln</value>
+  </data>
+  <data name="Availability rules" xml:space="preserve">
+    <value>Verfügbarkeitsregeln</value>
+  </data>
+  <data name="Room type" xml:space="preserve">
+    <value>Zimmertyp</value>
+  </data>
+  <data name="Period" xml:space="preserve">
+    <value>Zeitraum</value>
+  </data>
+  <data name="Occupancy" xml:space="preserve">
+    <value>Belegung</value>
+  </data>
+  <data name="Net / night" xml:space="preserve">
+    <value>Netto / Nacht</value>
+  </data>
+  <data name="Priority" xml:space="preserve">
+    <value>Priorität</value>
+  </data>
+  <data name="Scope" xml:space="preserve">
+    <value>Geltungsbereich</value>
+  </data>
+  <data name="Constraints" xml:space="preserve">
+    <value>Einschränkungen</value>
+  </data>
+  <data name="Room-specific" xml:space="preserve">
+    <value>Zimmerspezifisch</value>
+  </data>
+  <data name="Room {0}" xml:space="preserve">
+    <value>Zimmer {0}</value>
+  </data>
+  <data name="Min stay {0} nights" xml:space="preserve">
+    <value>Mindestaufenthalt {0} Nächte</value>
+  </data>
+  <data name="Rate rule saved." xml:space="preserve">
+    <value>Preisregel gespeichert.</value>
+  </data>
+  <data name="Availability rule saved." xml:space="preserve">
+    <value>Verfügbarkeitsregel gespeichert.</value>
+  </data>
+  <data name="guests" xml:space="preserve">
+    <value>Gäste</value>
+  </data>
+  <data name="Rate quote" xml:space="preserve">
+    <value>Preisvorschau</value>
+  </data>
+  <data name="Calculate stay price" xml:space="preserve">
+    <value>Aufenthaltspreis berechnen</value>
+  </data>
+  <data name="Nights" xml:space="preserve">
+    <value>Nächte</value>
+  </data>
+  <data name="Net total" xml:space="preserve">
+    <value>Netto gesamt</value>
+  </data>
+  <data name="VAT total" xml:space="preserve">
+    <value>MwSt. gesamt</value>
+  </data>
+  <data name="Gross total" xml:space="preserve">
+    <value>Brutto gesamt</value>
+  </data>
+  <data name="No room rate is configured for the requested stay." xml:space="preserve">
+    <value>Für den gewünschten Aufenthalt ist kein Zimmerpreis konfiguriert.</value>
+  </data>
+  <data name="Invoice {0} issued and opened." xml:space="preserve">
+    <value>Rechnung {0} wurde ausgestellt und geöffnet.</value>
+  </data>
+  <data name="The invoice PDF could not be opened automatically." xml:space="preserve">
+    <value>Die Rechnungs-PDF konnte nicht automatisch geöffnet werden.</value>
+  </data>
+</root>

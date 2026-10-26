@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Selected room does not exist." xml:space="preserve">
+    <value>Das ausgewählte Zimmer existiert nicht.</value>
+  </data>
+  <data name="Check-out must be after check-in." xml:space="preserve">
+    <value>Die Abreise muss nach der Anreise liegen.</value>
+  </data>
+  <data name="Room type is required for rate rules." xml:space="preserve">
+    <value>Für Preisregeln ist ein Zimmertyp erforderlich.</value>
+  </data>
+  <data name="Room type cannot exceed 40 characters." xml:space="preserve">
+    <value>Der Zimmertyp darf maximal 40 Zeichen enthalten.</value>
+  </data>
+  <data name="Rate rule end date must be after start date." xml:space="preserve">
+    <value>Das Enddatum der Preisregel muss nach dem Startdatum liegen.</value>
+  </data>
+  <data name="Minimum occupancy must be greater than 0." xml:space="preserve">
+    <value>Die Mindestbelegung muss größer als 0 sein.</value>
+  </data>
+  <data name="Maximum occupancy must be greater than or equal to minimum occupancy." xml:space="preserve">
+    <value>Die Maximalbelegung muss größer oder gleich der Mindestbelegung sein.</value>
+  </data>
+  <data name="Nightly net rate cannot be negative." xml:space="preserve">
+    <value>Der Netto-Nachtpreis darf nicht negativ sein.</value>
+  </data>
+  <data name="VAT rate must be one of the supported Austrian rates (0, 10, 13, 20)." xml:space="preserve">
+    <value>Der MwSt.-Satz muss einer der unterstützten österreichischen Sätze sein (0, 10, 13, 20).</value>
+  </data>
+  <data name="Availability rule end date must be after start date." xml:space="preserve">
+    <value>Das Enddatum der Verfügbarkeitsregel muss nach dem Startdatum liegen.</value>
+  </data>
+  <data name="Select either a room or room type for an availability rule." xml:space="preserve">
+    <value>Wählen Sie für eine Verfügbarkeitsregel entweder ein Zimmer oder einen Zimmertyp aus.</value>
+  </data>
+  <data name="Minimum stay must be greater than 0 nights when specified." xml:space="preserve">
+    <value>Der Mindestaufenthalt muss größer als 0 Nächte sein, wenn er gesetzt ist.</value>
+  </data>
+  <data name="Select at least one availability constraint." xml:space="preserve">
+    <value>Wählen Sie mindestens eine Verfügbarkeits-Einschränkung aus.</value>
+  </data>
+  <data name="Room is required." xml:space="preserve">
+    <value>Zimmer ist erforderlich.</value>
+  </data>
+  <data name="Occupancy must be greater than 0." xml:space="preserve">
+    <value>Die Belegung muss größer als 0 sein.</value>
+  </data>
+  <data name="This room is closed for sale in the selected date range." xml:space="preserve">
+    <value>Dieses Zimmer ist im ausgewählten Zeitraum für den Verkauf gesperrt.</value>
+  </data>
+  <data name="Arrival is closed for the selected check-in date." xml:space="preserve">
+    <value>Anreise ist für das ausgewählte Anreisedatum gesperrt.</value>
+  </data>
+  <data name="Departure is closed for the selected check-out date." xml:space="preserve">
+    <value>Abreise ist für das ausgewählte Abreisedatum gesperrt.</value>
+  </data>
+  <data name="Minimum stay is {0} nights for the selected period." xml:space="preserve">
+    <value>Der Mindestaufenthalt beträgt {0} Nächte für den ausgewählten Zeitraum.</value>
+  </data>
+  <data name="No room rate is configured for {0}." xml:space="preserve">
+    <value>Für {0} ist kein Zimmerpreis konfiguriert.</value>
+  </data>
+</root>
