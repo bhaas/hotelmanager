@@ -5,6 +5,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <!-- The Docker build restores with only the .csproj present; without this the SDK omits _framework/blazor.web.js. -->
+    <RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
     <UserSecretsId>e1acf7e3-7e4c-4b05-8190-985ec1855c7e</UserSecretsId>
   </PropertyGroup>
 
