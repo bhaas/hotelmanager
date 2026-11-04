@@ -7,6 +7,7 @@ public static class HotelClaimTypes
     public const string DisplayName = "display_name";
 }
 
+/// <summary>Per-hotel roles, stored in <c>HotelMembership.Role</c> and issued as role claims for the active hotel.</summary>
 public static class HotelRoles
 {
     public const string Admin = "Admin";
@@ -17,6 +18,13 @@ public static class HotelRoles
     public static readonly IReadOnlyList<string> All = [Admin, Manager, FrontDesk, Housekeeping];
 }
 
+/// <summary>Installation-wide roles, stored as ASP.NET Core Identity roles.</summary>
+public static class PlatformRoles
+{
+    /// <summary>Operator of the installation: sees and manages all hotels and acts as Admin in each of them.</summary>
+    public const string PlatformAdmin = "PlatformAdmin";
+}
+
 public static class HotelPolicies
 {
     /// <summary>Room planner, reservations and billing.</summary>
@@ -25,6 +33,9 @@ public static class HotelPolicies
     /// <summary>Rooms, categories, rates and availability.</summary>
     public const string ManageProperty = "ManageProperty";
 
-    /// <summary>User accounts and roles.</summary>
+    /// <summary>User accounts, roles and the hotel profile.</summary>
     public const string ManageUsers = "ManageUsers";
+
+    /// <summary>All hotels of the installation.</summary>
+    public const string ManagePlatform = "ManagePlatform";
 }

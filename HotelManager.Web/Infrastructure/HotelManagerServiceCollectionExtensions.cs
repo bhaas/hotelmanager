@@ -1,6 +1,7 @@
 using HotelManager.Web.Data;
 using HotelManager.Web.Domain;
 using HotelManager.Web.Features.Billing;
+using HotelManager.Web.Features.Hotels;
 using HotelManager.Web.Features.RoomPlanner;
 using HotelManager.Web.Features.Rooms;
 using HotelManager.Web.Features.Users;
@@ -24,11 +25,14 @@ public static class HotelManagerServiceCollectionExtensions
         services.AddScoped<ITenantContext>(provider => provider.GetRequiredService<TenantContext>());
 
         // Scoped factory so every DbContext receives the tenant of its request/circuit scope.
+        services.AddSingleton<TenantSessionInterceptor>();
         services.AddDbContextFactory<HotelDbContext>(
-            options => options.UseNpgsql(connectionString, npgsqlOptions =>
-            {
-                npgsqlOptions.EnableRetryOnFailure(3, TimeSpan.FromSeconds(2), null);
-            }),
+            (provider, options) => options
+                .UseNpgsql(connectionString, npgsqlOptions =>
+                {
+                    npgsqlOptions.EnableRetryOnFailure(3, TimeSpan.FromSeconds(2), null);
+                })
+                .AddInterceptors(provider.GetRequiredService<TenantSessionInterceptor>()),
             ServiceLifetime.Scoped);
 
         services.AddScoped<IRoomPlannerQueryService, RoomPlannerQueryService>();
@@ -37,6 +41,8 @@ public static class HotelManagerServiceCollectionExtensions
         services.AddScoped<IRoomInventoryService, RoomInventoryService>();
         services.AddScoped<IBillingService, BillingService>();
         services.AddScoped<IUserAdministrationService, UserAdministrationService>();
+        services.AddScoped<IHotelProfileService, HotelProfileService>();
+        services.AddScoped<IPlatformHotelService, PlatformHotelService>();
         services.AddSingleton<IInvoicePdfService, InvoicePdfService>();
         return services;
     }
@@ -47,6 +53,7 @@ public static class HotelManagerServiceCollectionExtensions
         services.AddCascadingAuthenticationState();
         services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
         services.AddScoped<CircuitHandler, TenantCircuitHandler>();
+        services.AddScoped<HotelAccessService>();
 
         services.AddAuthentication(options =>
             {
@@ -66,7 +73,7 @@ public static class HotelManagerServiceCollectionExtensions
             })
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<HotelDbContext>()
-            .AddSignInManager()
+            .AddSignInManager<HotelSignInManager>()
             .AddDefaultTokenProviders()
             .AddClaimsPrincipalFactory<HotelUserClaimsPrincipalFactory>();
 
@@ -88,7 +95,8 @@ public static class HotelManagerServiceCollectionExtensions
         services.AddAuthorizationBuilder()
             .AddPolicy(HotelPolicies.FrontOffice, policy => policy.RequireRole(HotelRoles.Admin, HotelRoles.Manager, HotelRoles.FrontDesk))
             .AddPolicy(HotelPolicies.ManageProperty, policy => policy.RequireRole(HotelRoles.Admin, HotelRoles.Manager))
-            .AddPolicy(HotelPolicies.ManageUsers, policy => policy.RequireRole(HotelRoles.Admin));
+            .AddPolicy(HotelPolicies.ManageUsers, policy => policy.RequireRole(HotelRoles.Admin))
+            .AddPolicy(HotelPolicies.ManagePlatform, policy => policy.RequireRole(PlatformRoles.PlatformAdmin));
 
         // Containers have no persistent disk; keys in the database keep cookies valid across deploys and instances.
         services.AddDataProtection()
@@ -110,3 +118,4 @@ public static class HotelManagerServiceCollectionExtensions
         return Task.CompletedTask;
     }
 }
+

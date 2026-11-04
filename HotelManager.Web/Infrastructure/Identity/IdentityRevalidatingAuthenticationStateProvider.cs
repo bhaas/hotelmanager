@@ -24,15 +24,26 @@ internal sealed class IdentityRevalidatingAuthenticationStateProvider(
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        return await ValidateSecurityStampAsync(userManager, authenticationState.User);
+        return await ValidateSecurityStampAsync(scope, userManager, authenticationState.User);
     }
 
-    private async Task<bool> ValidateSecurityStampAsync(UserManager<ApplicationUser> userManager, ClaimsPrincipal principal)
+    private async Task<bool> ValidateSecurityStampAsync(AsyncServiceScope scope, UserManager<ApplicationUser> userManager, ClaimsPrincipal principal)
     {
         var user = await userManager.GetUserAsync(principal);
         if (user is null || await userManager.IsLockedOutAsync(user))
         {
             return false;
+        }
+
+        // The hotel of this session may have been deactivated or the membership revoked.
+        if (Guid.TryParse(principal.FindFirstValue(HotelClaimTypes.HotelId), out var hotelId))
+        {
+            var hotelAccess = scope.ServiceProvider.GetRequiredService<HotelAccessService>();
+            var hotels = await hotelAccess.GetAccessibleHotelsAsync(user);
+            if (hotels.All(hotel => hotel.HotelId != hotelId))
+            {
+                return false;
+            }
         }
 
         if (!userManager.SupportsUserSecurityStamp)

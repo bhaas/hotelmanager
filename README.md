@@ -61,3 +61,22 @@ Notes:
 | Manager | front office + rooms, rates & availability settings |
 | FrontDesk | room planner, reservations, billing |
 | Housekeeping | home (housekeeping module to follow) |
+
+Roles are assigned **per hotel** (a user can be a member of several hotels with different roles).
+**PlatformAdmin** is a global role that can create, open and deactivate any hotel (*Platform → All hotels*).
+On startup the `Bootstrap:AdminEmail` user (or the oldest admin) is promoted to PlatformAdmin if none exists.
+
+## Multiple hotels
+
+All hotels share one database; every hotel-owned table carries a `HotelId`.
+Isolation is enforced twice:
+
+1. EF Core global query filters on the current hotel (from the `hotel_id` claim).
+2. PostgreSQL **row-level security**: the app switches each connection to the `hotelmanager_app` role
+   (`NOBYPASSRLS`, created by the `MultiHotel` migration) and sets `app.hotel_id`; the `tenant_isolation`
+   policy hides and blocks rows of other hotels.
+
+Requirements and notes:
+- Use a **session-mode / unpooled** connection (Neon `DATABASE_URL_UNPOOLED`, not PgBouncer) so `SET ROLE` persists per connection.
+- Migrations and test database setup run with `HotelDbContext.BypassRowLevelSecurity = true`.
+- Switch hotels via the hotel name in the header; edit hotel data (address, VAT ID, invoice prefix, time zone) under *Settings → Hotel profile*.

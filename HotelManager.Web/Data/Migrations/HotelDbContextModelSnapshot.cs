@@ -394,6 +394,14 @@ namespace HotelManager.Web.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Country")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<DateTimeOffset>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -402,19 +410,76 @@ namespace HotelManager.Web.Data.Migrations
                         .HasMaxLength(3)
                         .HasColumnType("character varying(3)");
 
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("LegalName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("Street")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("TimeZone")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<string>("VatId")
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
                     b.HasKey("Id");
 
                     b.ToTable("Hotels");
+                });
+
+            modelBuilder.Entity("HotelManager.Web.Domain.HotelMembership", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("HotelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.HasKey("UserId", "HotelId");
+
+                    b.HasIndex("HotelId");
+
+                    b.ToTable("HotelMemberships");
                 });
 
             modelBuilder.Entity("HotelManager.Web.Domain.Reservation", b =>
@@ -919,6 +984,25 @@ namespace HotelManager.Web.Data.Migrations
                     b.Navigation("Reservation");
                 });
 
+            modelBuilder.Entity("HotelManager.Web.Domain.HotelMembership", b =>
+                {
+                    b.HasOne("HotelManager.Web.Domain.Hotel", "Hotel")
+                        .WithMany()
+                        .HasForeignKey("HotelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("HotelManager.Web.Domain.ApplicationUser", "User")
+                        .WithMany("Memberships")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Hotel");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("HotelManager.Web.Domain.Reservation", b =>
                 {
                     b.HasOne("HotelManager.Web.Domain.Hotel", null)
@@ -1028,6 +1112,11 @@ namespace HotelManager.Web.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("HotelManager.Web.Domain.ApplicationUser", b =>
+                {
+                    b.Navigation("Memberships");
                 });
 
             modelBuilder.Entity("HotelManager.Web.Domain.Billing.InvoiceDocument", b =>

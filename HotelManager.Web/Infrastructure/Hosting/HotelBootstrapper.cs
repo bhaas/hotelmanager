@@ -24,7 +24,8 @@ public sealed class BootstrapOptions
 
 /// <summary>
 /// Applies EF Core migrations and, on an empty installation, creates the first hotel,
-/// its administrator account and (optionally) demo data.
+/// its administrator account (who also becomes platform administrator) and optionally demo data.
+/// On existing installations it makes sure there is a platform administrator.
 /// </summary>
 public static class HotelBootstrapper
 {
@@ -34,19 +35,27 @@ public static class HotelBootstrapper
         var provider = scope.ServiceProvider;
         var dbContext = provider.GetRequiredService<HotelDbContext>();
 
-        await dbContext.Database.MigrateAsync(cancellationToken);
-
-        var roleManager = provider.GetRequiredService<RoleManager<IdentityRole>>();
-        foreach (var role in HotelRoles.All)
+        // The row-level-security role is created by a migration, so migrations run as the connection owner.
+        dbContext.BypassRowLevelSecurity = true;
+        try
         {
-            if (!await roleManager.RoleExistsAsync(role))
-            {
-                EnsureSucceeded(await roleManager.CreateAsync(new IdentityRole(role)), $"create role {role}");
-            }
+            await dbContext.Database.MigrateAsync(cancellationToken);
+        }
+        finally
+        {
+            dbContext.BypassRowLevelSecurity = false;
         }
 
+        var roleManager = provider.GetRequiredService<RoleManager<IdentityRole>>();
+        if (!await roleManager.RoleExistsAsync(PlatformRoles.PlatformAdmin))
+        {
+            EnsureSucceeded(await roleManager.CreateAsync(new IdentityRole(PlatformRoles.PlatformAdmin)), "create platform role");
+        }
+
+        var userManager = provider.GetRequiredService<UserManager<ApplicationUser>>();
         if (await dbContext.Hotels.AnyAsync(cancellationToken))
         {
+            await EnsurePlatformAdminAsync(dbContext, userManager, options, logger, cancellationToken);
             return;
         }
 
@@ -57,7 +66,6 @@ public static class HotelBootstrapper
 
         var generatedPassword = string.IsNullOrWhiteSpace(options.AdminPassword);
         var password = generatedPassword ? PasswordGenerator.Create() : options.AdminPassword!;
-        var userManager = provider.GetRequiredService<UserManager<ApplicationUser>>();
         var admin = new ApplicationUser
         {
             HotelId = hotel.Id,
@@ -67,7 +75,9 @@ public static class HotelBootstrapper
             DisplayName = "Administrator"
         };
         EnsureSucceeded(await userManager.CreateAsync(admin, password), "create administrator");
-        EnsureSucceeded(await userManager.AddToRoleAsync(admin, HotelRoles.Admin), "assign administrator role");
+        EnsureSucceeded(await userManager.AddToRoleAsync(admin, PlatformRoles.PlatformAdmin), "assign platform administrator role");
+        dbContext.HotelMemberships.Add(new HotelMembership { UserId = admin.Id, HotelId = hotel.Id, Role = HotelRoles.Admin });
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         if (generatedPassword)
         {
@@ -85,6 +95,44 @@ public static class HotelBootstrapper
         {
             await RoomPlannerSeedService.SeedAsync(dbContext, cancellationToken);
         }
+    }
+
+    /// <summary>
+    /// Installations created before multi-hotel support have no platform administrator:
+    /// promote the configured bootstrap administrator, or else the longest-serving hotel administrator.
+    /// </summary>
+    private static async Task EnsurePlatformAdminAsync(
+        HotelDbContext dbContext,
+        UserManager<ApplicationUser> userManager,
+        BootstrapOptions options,
+        ILogger logger,
+        CancellationToken cancellationToken)
+    {
+        if ((await userManager.GetUsersInRoleAsync(PlatformRoles.PlatformAdmin)).Count > 0)
+        {
+            return;
+        }
+
+        var candidate = await userManager.FindByEmailAsync(options.AdminEmail.Trim());
+        if (candidate is null)
+        {
+            var candidateId = await dbContext.HotelMemberships
+                .Where(membership => membership.Role == HotelRoles.Admin && membership.IsActive)
+                .OrderBy(membership => membership.CreatedAtUtc)
+                .ThenBy(membership => membership.User.CreatedAtUtc)
+                .Select(membership => membership.UserId)
+                .FirstOrDefaultAsync(cancellationToken);
+            candidate = candidateId is null ? null : await userManager.FindByIdAsync(candidateId);
+        }
+
+        if (candidate is null)
+        {
+            logger.LogWarning("No platform administrator could be determined. Assign the {Role} role manually.", PlatformRoles.PlatformAdmin);
+            return;
+        }
+
+        EnsureSucceeded(await userManager.AddToRoleAsync(candidate, PlatformRoles.PlatformAdmin), "assign platform administrator role");
+        logger.LogInformation("{AdminEmail} is now platform administrator.", candidate.Email);
     }
 
     private static void EnsureSucceeded(IdentityResult result, string action)

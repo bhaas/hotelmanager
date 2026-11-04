@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+    <data name="Hotel profile" xml:space="preserve">
+    <value>Hotelprofil</value>
+  </data>
+  <data name="Name, address and tax data of this hotel. They appear on new invoices." xml:space="preserve">
+    <value>Name, Adresse und Steuerdaten dieses Hotels. Sie erscheinen auf neuen Rechnungen.</value>
+  </data>
+  <data name="The hotel profile was saved." xml:space="preserve">
+    <value>Das Hotelprofil wurde gespeichert.</value>
+  </data>
+  <data name="Loading..." xml:space="preserve">
+    <value>Wird geladen...</value>
+  </data>
+  <data name="General" xml:space="preserve">
+    <value>Allgemein</value>
+  </data>
+  <data name="Hotel name" xml:space="preserve">
+    <value>Hotelname</value>
+  </data>
+  <data name="Legal name (on invoices)" xml:space="preserve">
+    <value>Firmenwortlaut (auf Rechnungen)</value>
+  </data>
+  <data name="Phone" xml:space="preserve">
+    <value>Telefon</value>
+  </data>
+  <data name="Email" xml:space="preserve">
+    <value>E-Mail</value>
+  </data>
+  <data name="Address" xml:space="preserve">
+    <value>Adresse</value>
+  </data>
+  <data name="Street" xml:space="preserve">
+    <value>Straße</value>
+  </data>
+  <data name="Postal code" xml:space="preserve">
+    <value>PLZ</value>
+  </data>
+  <data name="City" xml:space="preserve">
+    <value>Ort</value>
+  </data>
+  <data name="Country" xml:space="preserve">
+    <value>Land</value>
+  </data>
+  <data name="Tax &amp; region" xml:space="preserve">
+    <value>Steuer &amp; Region</value>
+  </data>
+  <data name="VAT ID (UID)" xml:space="preserve">
+    <value>UID-Nummer</value>
+  </data>
+  <data name="Currency" xml:space="preserve">
+    <value>Währung</value>
+  </data>
+  <data name="Time zone" xml:space="preserve">
+    <value>Zeitzone</value>
+  </data>
+  <data name="Changes apply to new invoices only; issued invoices keep their original data." xml:space="preserve">
+    <value>Änderungen gelten nur für neue Rechnungen; ausgestellte Rechnungen behalten ihre ursprünglichen Daten.</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Speichern</value>
+  </data>
+</root>

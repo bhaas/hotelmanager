@@ -23,7 +23,15 @@
         <div class="alert alert-danger" role="alert">@pageError</div>
     }
 
-    @if (issuedPassword is not null)
+    @if (pageNotice is not null)
+    {
+        <div class="alert alert-success alert-dismissible" role="status">
+            @pageNotice
+            <button type="button" class="btn-close" aria-label="@L["Close"]" @onclick="() => pageNotice = null"></button>
+        </div>
+    }
+
+    @if (issuedPassword?.Password is not null)
     {
         <div class="password-reveal" role="status">
             <div>
@@ -65,12 +73,18 @@
                                         <span class="you-badge">@L["You"]</span>
                                     }
                                 </td>
-                                <td>@user.Email</td>
+                                <td>
+                                    @user.Email
+                                    @if (user.OtherHotelCount > 0)
+                                    {
+                                        <span class="you-badge" title="@L["This account also has access to other hotels."]">@L["+{0} hotels", user.OtherHotelCount]</span>
+                                    }
+                                </td>
                                 <td><span class="role-badge role-@user.Role.ToLowerInvariant()">@RoleLabel(user.Role)</span></td>
                                 <td>
                                     @if (user.IsLocked)
                                     {
-                                        <span class="status-badge archived">@L["Locked"]</span>
+                                        <span class="status-badge archived">@L["Deactivated"]</span>
                                     }
                                     else
                                     {
@@ -118,7 +132,7 @@
             <div class="form-grid">
                 <label class="span-2">
                     <span>@L["Name"]</span>
-                    <input class="form-control" @bind="formDisplayName" @bind:event="oninput" maxlength="120" />
+                    <input class="form-control" @bind="formDisplayName" @bind:event="oninput" maxlength="120" disabled="@(selected is { CanManageAccount: false })" />
                 </label>
                 <label class="span-2">
                     <span>@L["Email"]</span>
@@ -138,22 +152,29 @@
 
             @if (selected is null)
             {
-                <p class="drawer-hint">@L["A secure one-time password is generated when the user is created."]</p>
+                <p class="drawer-hint">@L["A secure one-time password is generated when the user is created. If the email already has an account (e.g. in another hotel), that account is added to this hotel and keeps its password."]</p>
             }
             else if (!selected.IsCurrentUser)
             {
+                @if (!selected.CanManageAccount)
+                {
+                    <p class="drawer-hint">@L["This account also belongs to other hotels. Name and password can only be changed by the platform administrator."]</p>
+                }
                 <div class="danger-zone">
                     <h3>@L["Access"]</h3>
-                    <p>@L["Resetting the password or locking the account signs the user out of all sessions."]</p>
+                    <p>@L["Resetting the password or deactivating access to this hotel signs the user out of all sessions."]</p>
                     <div class="danger-actions">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="ResetPasswordAsync" disabled="@busy">@L["Reset password"]</button>
+                        @if (selected.CanManageAccount)
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="ResetPasswordAsync" disabled="@busy">@L["Reset password"]</button>
+                        }
                         @if (selected.IsLocked)
                         {
-                            <button type="button" class="btn btn-sm btn-outline-success" @onclick="() => SetLockedAsync(false)" disabled="@busy">@L["Unlock account"]</button>
+                            <button type="button" class="btn btn-sm btn-outline-success" @onclick="() => SetLockedAsync(false)" disabled="@busy">@L["Reactivate access"]</button>
                         }
                         else
                         {
-                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => SetLockedAsync(true)" disabled="@busy">@L["Lock account"]</button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => SetLockedAsync(true)" disabled="@busy">@L["Deactivate access"]</button>
                         }
                     </div>
                 </div>
@@ -179,6 +200,7 @@
     private bool busy;
     private bool passwordCopied;
     private string? pageError;
+    private string? pageNotice;
     private string? drawerError;
     private string formDisplayName = string.Empty;
     private string formEmail = string.Empty;
@@ -259,7 +281,11 @@
         {
             if (selected is null)
             {
-                issuedPassword = await UserAdministration.CreateAsync(new UserCreateRequest(formEmail, formDisplayName, formRole));
+                var created = await UserAdministration.CreateAsync(new UserCreateRequest(formEmail, formDisplayName, formRole));
+                issuedPassword = created.Password is null ? null : created;
+                pageNotice = created.Password is null
+                    ? L["{0} already had an account and now has access to this hotel. The existing password stays valid.", created.User.Email].Value
+                    : null;
                 passwordCopied = false;
             }
             else

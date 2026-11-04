@@ -10,7 +10,7 @@
         <div class="top-row px-4">
             <AuthorizeView>
                 <Authorized>
-                    <span class="app-context" title="@L["Hotel"]">@context.User.FindFirst(HotelClaimTypes.HotelName)?.Value</span>
+                    <HotelSwitcher />
                     <span class="top-row-spacer"></span>
                     <a class="user-link" href="account/manage/password" title="@L["Change password"]">
                         <span class="user-avatar" aria-hidden="true">@GetInitials(context.User.FindFirst(HotelClaimTypes.DisplayName)?.Value)</span>

@@ -119,6 +119,7 @@ public sealed class BillingService(
                 throw new BillingConflictException(localizer["An invoice has already been issued for this reservation."]);
             }
 
+            var hotel = await dbContext.Hotels.AsNoTracking().SingleAsync(item => item.Id == reservation.HotelId, cancellationToken);
             var invoiceNumber = await GetNextInvoiceNumberAsync(dbContext, cancellationToken);
             var invoice = new InvoiceDocument
             {
@@ -130,9 +131,9 @@ public sealed class BillingService(
                 ServiceTo = reservation.CheckOut,
                 DueDate = request.DueDate,
                 Currency = BillingCurrency,
-                SellerName = complianceOptions.Value.SellerName,
-                SellerAddress = complianceOptions.Value.SellerAddress,
-                SellerVatId = complianceOptions.Value.SellerVatId,
+                SellerName = hotel.InvoiceSellerName,
+                SellerAddress = hotel.InvoiceSellerAddress,
+                SellerVatId = hotel.VatId ?? string.Empty,
                 BuyerName = request.BuyerName.Trim(),
                 BuyerAddress = request.BuyerAddress.Trim(),
                 BuyerVatId = NormalizeOptionalText(request.BuyerVatId),
@@ -422,3 +423,4 @@ public sealed class BillingService(
         });
     }
 }
+

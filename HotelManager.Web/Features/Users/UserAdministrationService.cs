@@ -1,5 +1,6 @@
 using System.Net.Mail;
 using System.Security.Claims;
+using HotelManager.Web.Data;
 using HotelManager.Web.Domain;
 using HotelManager.Web.Infrastructure.Identity;
 using HotelManager.Web.Infrastructure.Tenancy;
@@ -10,8 +11,10 @@ using Microsoft.Extensions.Localization;
 namespace HotelManager.Web.Features.Users;
 
 /// <summary>
-/// Manages the user accounts of the current hotel. Each operation runs in its own DI scope so the
-/// Identity stores never keep a long-lived DbContext inside an interactive circuit.
+/// Manages the members of the current hotel. Roles and access are per hotel (<see cref="HotelMembership"/>);
+/// account-wide changes (name, password) are only allowed for accounts that belong to this hotel alone.
+/// Each operation runs in its own DI scope so the Identity stores never keep a long-lived DbContext
+/// inside an interactive circuit.
 /// </summary>
 public sealed class UserAdministrationService(
     TenantContext tenantContext,
@@ -22,18 +25,20 @@ public sealed class UserAdministrationService(
     {
         var hotelId = RequireHotel();
         await using var scope = CreateScope(hotelId);
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var context = new OperationContext(scope);
 
-        var users = await userManager.Users
-            .Where(user => user.HotelId == hotelId)
-            .OrderBy(user => user.DisplayName)
-            .ThenBy(user => user.Email)
+        var memberships = await context.Db.HotelMemberships
+            .AsNoTracking()
+            .Include(membership => membership.User)
+            .Where(membership => membership.HotelId == hotelId)
+            .OrderBy(membership => membership.User.DisplayName)
+            .ThenBy(membership => membership.User.Email)
             .ToListAsync(cancellationToken);
 
-        var result = new List<UserSummary>(users.Count);
-        foreach (var user in users)
+        var result = new List<UserSummary>(memberships.Count);
+        foreach (var membership in memberships)
         {
-            result.Add(await ToSummaryAsync(userManager, user));
+            result.Add(await ToSummaryAsync(context, membership, cancellationToken));
         }
 
         return result;
@@ -47,24 +52,38 @@ public sealed class UserAdministrationService(
         var role = NormalizeRole(request.Role);
 
         await using var scope = CreateScope(hotelId);
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        if (await userManager.FindByEmailAsync(email) is not null)
+        var context = new OperationContext(scope);
+        string? password = null;
+
+        var user = await context.Users.FindByEmailAsync(email);
+        if (user is null)
         {
-            throw new UserAdministrationException(localizer["A user with this email address already exists."]);
+            user = new ApplicationUser
+            {
+                HotelId = hotelId,
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                DisplayName = displayName
+            };
+            password = PasswordGenerator.Create();
+            EnsureSucceeded(await context.Users.CreateAsync(user, password));
+        }
+        else if (await context.Db.HotelMemberships.AnyAsync(item => item.UserId == user.Id && item.HotelId == hotelId, cancellationToken))
+        {
+            throw new UserAdministrationException(localizer["This user already belongs to this hotel."]);
         }
 
-        var user = new ApplicationUser
+        var membership = new HotelMembership { UserId = user.Id, HotelId = hotelId, Role = role, User = user };
+        context.Db.HotelMemberships.Add(membership);
+        await context.Db.SaveChangesAsync(cancellationToken);
+        if (password is null)
         {
-            HotelId = hotelId,
-            UserName = email,
-            Email = email,
-            EmailConfirmed = true,
-            DisplayName = displayName
-        };
-        var password = PasswordGenerator.Create();
-        EnsureSucceeded(await userManager.CreateAsync(user, password));
-        EnsureSucceeded(await userManager.AddToRoleAsync(user, role));
-        return new UserPasswordResult(await ToSummaryAsync(userManager, user), password);
+            // An existing account gets a new hotel: refresh its sessions so the hotel switcher shows it.
+            EnsureSucceeded(await context.Users.UpdateSecurityStampAsync(user));
+        }
+
+        return new UserPasswordResult(await ToSummaryAsync(context, membership, cancellationToken), password);
     }
 
     public async Task<UserSummary> UpdateAsync(string userId, UserUpdateRequest request, CancellationToken cancellationToken = default)
@@ -74,81 +93,104 @@ public sealed class UserAdministrationService(
         var role = NormalizeRole(request.Role);
 
         await using var scope = CreateScope(hotelId);
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        var user = await FindUserAsync(userManager, hotelId, userId);
-        var currentRoles = await userManager.GetRolesAsync(user);
+        var context = new OperationContext(scope);
+        var membership = await FindMembershipAsync(context, hotelId, userId, cancellationToken);
 
-        if (currentRoles.Contains(HotelRoles.Admin) && role != HotelRoles.Admin)
+        if (membership.Role == HotelRoles.Admin && role != HotelRoles.Admin)
         {
-            if (IsCurrentUser(user))
+            if (IsCurrentUser(membership.UserId))
             {
                 throw new UserAdministrationException(localizer["You cannot remove your own administrator role."]);
             }
 
-            await EnsureAnotherActiveAdminAsync(userManager, hotelId, user);
+            await EnsureAnotherActiveAdminAsync(context, hotelId, membership.UserId, cancellationToken);
         }
 
-        user.DisplayName = displayName;
-        EnsureSucceeded(await userManager.UpdateAsync(user));
-
-        if (!currentRoles.SequenceEqual([role]))
+        if (!string.Equals(membership.User.DisplayName, displayName, StringComparison.Ordinal))
         {
-            EnsureSucceeded(await userManager.RemoveFromRolesAsync(user, currentRoles));
-            EnsureSucceeded(await userManager.AddToRoleAsync(user, role));
-            // Ends existing sessions so the new permissions apply immediately.
-            EnsureSucceeded(await userManager.UpdateSecurityStampAsync(user));
+            if (!await CanManageAccountAsync(context, membership.User, hotelId, cancellationToken))
+            {
+                throw new UserAdministrationException(localizer["This account also belongs to other hotels; only the platform administrator can rename it."]);
+            }
+
+            membership.User.DisplayName = displayName;
+            EnsureSucceeded(await context.Users.UpdateAsync(membership.User));
         }
 
-        return await ToSummaryAsync(userManager, user);
+        if (membership.Role != role)
+        {
+            membership.Role = role;
+            await context.Db.SaveChangesAsync(cancellationToken);
+            // Ends existing sessions so the new permissions apply immediately.
+            EnsureSucceeded(await context.Users.UpdateSecurityStampAsync(membership.User));
+        }
+
+        return await ToSummaryAsync(context, membership, cancellationToken);
     }
 
     public async Task<UserSummary> SetLockedAsync(string userId, bool locked, CancellationToken cancellationToken = default)
     {
         var hotelId = RequireHotel();
         await using var scope = CreateScope(hotelId);
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        var user = await FindUserAsync(userManager, hotelId, userId);
+        var context = new OperationContext(scope);
+        var membership = await FindMembershipAsync(context, hotelId, userId, cancellationToken);
 
         if (locked)
         {
-            if (IsCurrentUser(user))
+            if (IsCurrentUser(membership.UserId))
             {
                 throw new UserAdministrationException(localizer["You cannot lock your own account."]);
             }
 
-            if (await userManager.IsInRoleAsync(user, HotelRoles.Admin))
+            if (membership.Role == HotelRoles.Admin)
             {
-                await EnsureAnotherActiveAdminAsync(userManager, hotelId, user);
+                await EnsureAnotherActiveAdminAsync(context, hotelId, membership.UserId, cancellationToken);
             }
 
-            EnsureSucceeded(await userManager.SetLockoutEnabledAsync(user, true));
-            EnsureSucceeded(await userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue));
-            EnsureSucceeded(await userManager.UpdateSecurityStampAsync(user));
+            membership.IsActive = false;
+            await context.Db.SaveChangesAsync(cancellationToken);
+            EnsureSucceeded(await context.Users.UpdateSecurityStampAsync(membership.User));
         }
         else
         {
-            EnsureSucceeded(await userManager.SetLockoutEndDateAsync(user, null));
-            EnsureSucceeded(await userManager.ResetAccessFailedCountAsync(user));
+            membership.IsActive = true;
+            await context.Db.SaveChangesAsync(cancellationToken);
+            // Also lift a sign-in lockout (e.g. after too many wrong passwords).
+            EnsureSucceeded(await context.Users.SetLockoutEndDateAsync(membership.User, null));
+            EnsureSucceeded(await context.Users.ResetAccessFailedCountAsync(membership.User));
         }
 
-        return await ToSummaryAsync(userManager, user);
+        return await ToSummaryAsync(context, membership, cancellationToken);
     }
 
     public async Task<UserPasswordResult> ResetPasswordAsync(string userId, CancellationToken cancellationToken = default)
     {
         var hotelId = RequireHotel();
         await using var scope = CreateScope(hotelId);
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-        var user = await FindUserAsync(userManager, hotelId, userId);
+        var context = new OperationContext(scope);
+        var membership = await FindMembershipAsync(context, hotelId, userId, cancellationToken);
+        if (!await CanManageAccountAsync(context, membership.User, hotelId, cancellationToken))
+        {
+            throw new UserAdministrationException(localizer["This account also belongs to other hotels; only the platform administrator can reset its password."]);
+        }
 
         var password = PasswordGenerator.Create();
-        var token = await userManager.GeneratePasswordResetTokenAsync(user);
-        EnsureSucceeded(await userManager.ResetPasswordAsync(user, token, password));
-        return new UserPasswordResult(await ToSummaryAsync(userManager, user), password);
+        var token = await context.Users.GeneratePasswordResetTokenAsync(membership.User);
+        EnsureSucceeded(await context.Users.ResetPasswordAsync(membership.User, token, password));
+        return new UserPasswordResult(await ToSummaryAsync(context, membership, cancellationToken), password);
+    }
+
+    private sealed class OperationContext(AsyncServiceScope scope)
+    {
+        public HotelDbContext Db { get; } = scope.ServiceProvider.GetRequiredService<HotelDbContext>();
+
+        public UserManager<ApplicationUser> Users { get; } = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
     }
 
     private Guid RequireHotel() =>
         tenantContext.HotelId ?? throw new UserAdministrationException(localizer["No hotel selected."]);
+
+    private bool CallerIsPlatformAdmin => tenantContext.User?.IsInRole(PlatformRoles.PlatformAdmin) == true;
 
     private AsyncServiceScope CreateScope(Guid hotelId)
     {
@@ -159,25 +201,38 @@ public sealed class UserAdministrationService(
         return scope;
     }
 
-    private bool IsCurrentUser(ApplicationUser user) =>
-        string.Equals(tenantContext.User?.FindFirstValue(ClaimTypes.NameIdentifier), user.Id, StringComparison.Ordinal);
+    private bool IsCurrentUser(string userId) =>
+        string.Equals(tenantContext.User?.FindFirstValue(ClaimTypes.NameIdentifier), userId, StringComparison.Ordinal);
 
-    private async Task<ApplicationUser> FindUserAsync(UserManager<ApplicationUser> userManager, Guid hotelId, string userId)
+    private async Task<HotelMembership> FindMembershipAsync(OperationContext context, Guid hotelId, string userId, CancellationToken cancellationToken) =>
+        await context.Db.HotelMemberships
+            .Include(membership => membership.User)
+            .SingleOrDefaultAsync(membership => membership.HotelId == hotelId && membership.UserId == userId, cancellationToken)
+        ?? throw new UserAdministrationException(localizer["User not found."]);
+
+    private async Task<bool> CanManageAccountAsync(OperationContext context, ApplicationUser user, Guid hotelId, CancellationToken cancellationToken)
     {
-        var user = await userManager.FindByIdAsync(userId);
-        return user is not null && user.HotelId == hotelId
-            ? user
-            : throw new UserAdministrationException(localizer["User not found."]);
+        if (CallerIsPlatformAdmin || IsCurrentUser(user.Id))
+        {
+            return true;
+        }
+
+        return await CountOtherHotelsAsync(context, user.Id, hotelId, cancellationToken) == 0 &&
+               !await context.Users.IsInRoleAsync(user, PlatformRoles.PlatformAdmin);
     }
 
-    private async Task EnsureAnotherActiveAdminAsync(UserManager<ApplicationUser> userManager, Guid hotelId, ApplicationUser user)
+    private static Task<int> CountOtherHotelsAsync(OperationContext context, string userId, Guid hotelId, CancellationToken cancellationToken) =>
+        context.Db.HotelMemberships.CountAsync(membership => membership.UserId == userId && membership.HotelId != hotelId, cancellationToken);
+
+    private async Task EnsureAnotherActiveAdminAsync(OperationContext context, Guid hotelId, string userId, CancellationToken cancellationToken)
     {
-        var admins = await userManager.GetUsersInRoleAsync(HotelRoles.Admin);
         var now = DateTimeOffset.UtcNow;
-        var hasOtherActiveAdmin = admins.Any(admin =>
-            admin.HotelId == hotelId &&
-            admin.Id != user.Id &&
-            (admin.LockoutEnd is null || admin.LockoutEnd <= now));
+        var hasOtherActiveAdmin = await context.Db.HotelMemberships.AnyAsync(membership =>
+            membership.HotelId == hotelId &&
+            membership.UserId != userId &&
+            membership.Role == HotelRoles.Admin &&
+            membership.IsActive &&
+            (membership.User.LockoutEnd == null || membership.User.LockoutEnd <= now), cancellationToken);
 
         if (!hasOtherActiveAdmin)
         {
@@ -185,18 +240,19 @@ public sealed class UserAdministrationService(
         }
     }
 
-    private async Task<UserSummary> ToSummaryAsync(UserManager<ApplicationUser> userManager, ApplicationUser user)
+    private async Task<UserSummary> ToSummaryAsync(OperationContext context, HotelMembership membership, CancellationToken cancellationToken)
     {
-        var roles = await userManager.GetRolesAsync(user);
-        var role = HotelRoles.All.FirstOrDefault(roles.Contains) ?? string.Empty;
+        var user = membership.User;
         return new UserSummary(
             user.Id,
             user.Email ?? string.Empty,
             user.DisplayName,
-            role,
-            user.LockoutEnd is { } lockoutEnd && lockoutEnd > DateTimeOffset.UtcNow,
+            membership.Role,
+            !membership.IsActive || (user.LockoutEnd is { } lockoutEnd && lockoutEnd > DateTimeOffset.UtcNow),
             user.CreatedAtUtc,
-            IsCurrentUser(user));
+            IsCurrentUser(user.Id),
+            await CountOtherHotelsAsync(context, user.Id, membership.HotelId, cancellationToken),
+            await CanManageAccountAsync(context, user, membership.HotelId, cancellationToken));
     }
 
     private string NormalizeEmail(string? email)

@@ -24,6 +24,17 @@ public sealed class HotelDbContext(DbContextOptions<HotelDbContext> options, ITe
 
     public DbSet<Hotel> Hotels => Set<Hotel>();
 
+    public DbSet<HotelMembership> HotelMemberships => Set<HotelMembership>();
+
+    /// <summary>
+    /// When true the connection keeps the login (owner) role, so PostgreSQL row-level security is not applied.
+    /// Only for migrations, database maintenance and explicit platform-wide operations.
+    /// </summary>
+    public bool BypassRowLevelSecurity { get; set; }
+
+    /// <summary>Hotel the PostgreSQL session is bound to (row-level security); null when no hotel is selected.</summary>
+    internal Guid? SessionHotelId => tenantContext?.HotelId;
+
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
 
     public DbSet<Room> Rooms => Set<Room>();
@@ -97,6 +108,17 @@ public sealed class HotelDbContext(DbContextOptions<HotelDbContext> options, ITe
         hotelBuilder.Property(hotel => hotel.Name).IsRequired().HasMaxLength(120);
         hotelBuilder.Property(hotel => hotel.TimeZone).IsRequired().HasMaxLength(64);
         hotelBuilder.Property(hotel => hotel.Currency).IsRequired().HasMaxLength(3);
+        hotelBuilder.Property(hotel => hotel.LegalName).HasMaxLength(200);
+        hotelBuilder.Property(hotel => hotel.Street).HasMaxLength(200);
+        hotelBuilder.Property(hotel => hotel.PostalCode).HasMaxLength(16);
+        hotelBuilder.Property(hotel => hotel.City).HasMaxLength(100);
+        hotelBuilder.Property(hotel => hotel.Country).HasMaxLength(100);
+        hotelBuilder.Property(hotel => hotel.Phone).HasMaxLength(40);
+        hotelBuilder.Property(hotel => hotel.Email).HasMaxLength(256);
+        hotelBuilder.Property(hotel => hotel.VatId).HasMaxLength(24);
+        hotelBuilder.Property(hotel => hotel.IsActive).HasDefaultValue(true);
+        hotelBuilder.Ignore(hotel => hotel.InvoiceSellerName);
+        hotelBuilder.Ignore(hotel => hotel.InvoiceSellerAddress);
 
         var userBuilder = modelBuilder.Entity<ApplicationUser>();
         userBuilder.Property(user => user.DisplayName).IsRequired().HasMaxLength(120);
@@ -104,6 +126,20 @@ public sealed class HotelDbContext(DbContextOptions<HotelDbContext> options, ITe
             .WithMany()
             .HasForeignKey(user => user.HotelId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        var membershipBuilder = modelBuilder.Entity<HotelMembership>();
+        membershipBuilder.HasKey(membership => new { membership.UserId, membership.HotelId });
+        membershipBuilder.Property(membership => membership.Role).IsRequired().HasMaxLength(32);
+        membershipBuilder.Property(membership => membership.IsActive).HasDefaultValue(true);
+        membershipBuilder.HasIndex(membership => membership.HotelId);
+        membershipBuilder.HasOne(membership => membership.User)
+            .WithMany(user => user.Memberships)
+            .HasForeignKey(membership => membership.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+        membershipBuilder.HasOne(membership => membership.Hotel)
+            .WithMany()
+            .HasForeignKey(membership => membership.HotelId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         var roomBuilder = modelBuilder.Entity<Room>();
         roomBuilder.HasKey(room => room.Id);

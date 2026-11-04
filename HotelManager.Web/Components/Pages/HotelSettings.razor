@@ -1,0 +1,194 @@
+@page "/settings/hotel"
+@attribute [Authorize(Policy = HotelPolicies.ManageUsers)]
+@rendermode InteractiveServer
+@inject IHotelProfileService HotelProfiles
+@inject NavigationManager Navigation
+@inject IStringLocalizer<HotelSettings> L
+
+<PageTitle>@L["Hotel profile"]</PageTitle>
+
+<div class="settings-page">
+    <header class="settings-header">
+        <div>
+            <h1>@L["Hotel profile"]</h1>
+            <p class="settings-subtitle">@L["Name, address and tax data of this hotel. They appear on new invoices."]</p>
+        </div>
+    </header>
+
+    @if (saved)
+    {
+        <div class="alert alert-success" role="status">@L["The hotel profile was saved."]</div>
+    }
+
+    @if (error is not null)
+    {
+        <div class="alert alert-danger" role="alert">@error</div>
+    }
+
+    @if (profile is null)
+    {
+        <p><em>@L["Loading..."]</em></p>
+    }
+    else
+    {
+        <form class="profile-layout" @onsubmit="SaveAsync" @onsubmit:preventDefault>
+            <section class="inventory-card">
+                <h2>@L["General"]</h2>
+                <div class="form-grid">
+                    <label class="span-2">
+                        <span>@L["Hotel name"] *</span>
+                        <input class="form-control" @bind="name" @bind:event="oninput" maxlength="120" required />
+                    </label>
+                    <label class="span-2">
+                        <span>@L["Legal name (on invoices)"]</span>
+                        <input class="form-control" @bind="legalName" maxlength="200" placeholder="@name" />
+                    </label>
+                    <label>
+                        <span>@L["Phone"]</span>
+                        <input class="form-control" type="tel" @bind="phone" maxlength="40" />
+                    </label>
+                    <label>
+                        <span>@L["Email"]</span>
+                        <input class="form-control" type="email" @bind="email" maxlength="256" />
+                    </label>
+                </div>
+            </section>
+
+            <section class="inventory-card">
+                <h2>@L["Address"]</h2>
+                <div class="form-grid">
+                    <label class="span-2">
+                        <span>@L["Street"]</span>
+                        <input class="form-control" @bind="street" maxlength="200" />
+                    </label>
+                    <label>
+                        <span>@L["Postal code"]</span>
+                        <input class="form-control" @bind="postalCode" maxlength="16" />
+                    </label>
+                    <label>
+                        <span>@L["City"]</span>
+                        <input class="form-control" @bind="city" maxlength="100" />
+                    </label>
+                    <label class="span-2">
+                        <span>@L["Country"]</span>
+                        <input class="form-control" @bind="country" maxlength="100" />
+                    </label>
+                </div>
+            </section>
+
+            <section class="inventory-card">
+                <h2>@L["Tax & region"]</h2>
+                <div class="form-grid">
+                    <label>
+                        <span>@L["VAT ID (UID)"]</span>
+                        <input class="form-control" @bind="vatId" maxlength="24" placeholder="ATU12345678" />
+                    </label>
+                    <label>
+                        <span>@L["Currency"]</span>
+                        <input class="form-control" value="@profile.Currency" disabled />
+                    </label>
+                    <label class="span-2">
+                        <span>@L["Time zone"]</span>
+                        <select class="form-select" @bind="timeZone">
+                            @foreach (var zone in TimeZoneOptions)
+                            {
+                                <option value="@zone">@zone</option>
+                            }
+                        </select>
+                    </label>
+                </div>
+                <p class="drawer-hint">@L["Changes apply to new invoices only; issued invoices keep their original data."]</p>
+            </section>
+
+            <div class="profile-actions">
+                <button type="submit" class="btn btn-primary" disabled="@(busy || string.IsNullOrWhiteSpace(name))">@L["Save"]</button>
+            </div>
+        </form>
+    }
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "saved")]
+    private bool SavedQuery { get; set; }
+
+    private HotelProfile? profile;
+    private bool busy;
+    private bool saved;
+    private string? error;
+    private string name = string.Empty;
+    private string? legalName;
+    private string? street;
+    private string? postalCode;
+    private string? city;
+    private string? country;
+    private string? phone;
+    private string? email;
+    private string? vatId;
+    private string timeZone = "Europe/Vienna";
+
+    private IEnumerable<string> TimeZoneOptions =>
+        HotelTimeZones.Common.Contains(timeZone) ? HotelTimeZones.Common : HotelTimeZones.Common.Prepend(timeZone);
+
+    protected override async Task OnInitializedAsync()
+    {
+        saved = SavedQuery;
+        try
+        {
+            Apply(await HotelProfiles.GetCurrentAsync());
+        }
+        catch (HotelValidationException exception)
+        {
+            error = exception.Message;
+        }
+    }
+
+    private void Apply(HotelProfile value)
+    {
+        profile = value;
+        name = value.Name;
+        legalName = value.LegalName;
+        street = value.Street;
+        postalCode = value.PostalCode;
+        city = value.City;
+        country = value.Country;
+        phone = value.Phone;
+        email = value.Email;
+        vatId = value.VatId;
+        timeZone = value.TimeZone;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (busy || profile is null)
+        {
+            return;
+        }
+
+        busy = true;
+        error = null;
+        saved = false;
+        try
+        {
+            var previousName = profile.Name;
+            Apply(await HotelProfiles.UpdateCurrentAsync(new HotelProfileUpdate(
+                name, legalName, street, postalCode, city, country, phone, email, vatId, timeZone)));
+
+            if (!string.Equals(previousName, profile.Name, StringComparison.Ordinal))
+            {
+                // The hotel name is part of the sign-in cookie (header); re-issue it.
+                Navigation.NavigateTo("account/refresh-sign-in?returnUrl=" + Uri.EscapeDataString("/settings/hotel?saved=true"), forceLoad: true);
+                return;
+            }
+
+            saved = true;
+        }
+        catch (HotelValidationException exception)
+        {
+            error = exception.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+}

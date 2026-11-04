@@ -61,9 +61,19 @@
             return;
         }
 
+        var noHotelAccess = false;
+        if (result.IsNotAllowed)
+        {
+            // Only reveal the reason when the password is correct.
+            var user = await SignInManager.UserManager.FindByEmailAsync(Input.Email.Trim());
+            noHotelAccess = user is not null && await SignInManager.UserManager.CheckPasswordAsync(user, Input.Password);
+        }
+
         errorMessage = result.IsLockedOut
             ? L["This account is locked. Try again later or contact your administrator."]
-            : L["Invalid email address or password."];
+            : noHotelAccess
+                ? L["Your account has no access to an active hotel. Contact your administrator."]
+                : L["Invalid email address or password."];
     }
 
     private string GetSafeReturnUrl()

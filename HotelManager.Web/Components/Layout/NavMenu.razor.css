@@ -120,3 +120,11 @@
         overflow-y: auto;
     }
 }
+
+.bi-building-nav-menu {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M3 1h10v14H9v-3H7v3H3V1Zm2 2v2h2V3H5Zm4 0v2h2V3H9ZM5 7v2h2V7H5Zm4 0v2h2V7H9Z'/%3E%3C/svg%3E");
+}
+
+.bi-grid-nav-menu {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M1 1h6v6H1V1Zm8 0h6v6H9V1ZM1 9h6v6H1V9Zm8 0h6v6H9V9Z'/%3E%3C/svg%3E");
+}

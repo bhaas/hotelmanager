@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+    <data name="All hotels" xml:space="preserve">
+    <value>Alle Hotels</value>
+  </data>
+  <data name="Platform administration: create hotels, appoint their administrators and open any hotel." xml:space="preserve">
+    <value>Plattform-Verwaltung: Hotels anlegen, Administratoren bestimmen und jedes Hotel öffnen.</value>
+  </data>
+  <data name="+ New hotel" xml:space="preserve">
+    <value>+ Neues Hotel</value>
+  </data>
+  <data name="Hotel {0} was created." xml:space="preserve">
+    <value>Hotel {0} wurde angelegt.</value>
+  </data>
+  <data name="{0} already had an account and is now administrator of this hotel. The existing password stays valid." xml:space="preserve">
+    <value>{0} hatte bereits ein Konto und ist jetzt Administrator dieses Hotels. Das bestehende Passwort bleibt gültig.</value>
+  </data>
+  <data name="One-time password for {0}. Hand it over securely; it will not be shown again." xml:space="preserve">
+    <value>Einmalpasswort für {0}. Übergeben Sie es sicher; es wird nicht erneut angezeigt.</value>
+  </data>
+  <data name="Copied" xml:space="preserve">
+    <value>Kopiert</value>
+  </data>
+  <data name="Copy" xml:space="preserve">
+    <value>Kopieren</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="Loading..." xml:space="preserve">
+    <value>Wird geladen...</value>
+  </data>
+  <data name="Search hotels" xml:space="preserve">
+    <value>Hotels suchen</value>
+  </data>
+  <data name="{0} hotels, {1} active" xml:space="preserve">
+    <value>{0} Hotels, {1} aktiv</value>
+  </data>
+  <data name="Hotel" xml:space="preserve">
+    <value>Hotel</value>
+  </data>
+  <data name="Location" xml:space="preserve">
+    <value>Standort</value>
+  </data>
+  <data name="Users" xml:space="preserve">
+    <value>Benutzer</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Created" xml:space="preserve">
+    <value>Angelegt</value>
+  </data>
+  <data name="Actions" xml:space="preserve">
+    <value>Aktionen</value>
+  </data>
+  <data name="Current" xml:space="preserve">
+    <value>Aktuell</value>
+  </data>
+  <data name="Active" xml:space="preserve">
+    <value>Aktiv</value>
+  </data>
+  <data name="Deactivated" xml:space="preserve">
+    <value>Deaktiviert</value>
+  </data>
+  <data name="Open" xml:space="preserve">
+    <value>Öffnen</value>
+  </data>
+  <data name="New hotel" xml:space="preserve">
+    <value>Neues Hotel</value>
+  </data>
+  <data name="Hotel name" xml:space="preserve">
+    <value>Hotelname</value>
+  </data>
+  <data name="City" xml:space="preserve">
+    <value>Ort</value>
+  </data>
+  <data name="Country" xml:space="preserve">
+    <value>Land</value>
+  </data>
+  <data name="Hotel administrator" xml:space="preserve">
+    <value>Hotel-Administrator</value>
+  </data>
+  <data name="Email" xml:space="preserve">
+    <value>E-Mail</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="A new account gets a one-time password. An existing account (e.g. your own) is added as administrator and keeps its password." xml:space="preserve">
+    <value>Ein neues Konto erhält ein Einmalpasswort. Ein bestehendes Konto (z. B. Ihr eigenes) wird als Administrator hinzugefügt und behält sein Passwort.</value>
+  </data>
+  <data name="Add demo rooms, rates and reservations" xml:space="preserve">
+    <value>Demo-Zimmer, -Preise und -Reservierungen anlegen</value>
+  </data>
+  <data name="Address, VAT ID and time zone are completed afterwards in the hotel profile of the new hotel." xml:space="preserve">
+    <value>Adresse, UID-Nummer und Zeitzone werden danach im Hotelprofil des neuen Hotels ergänzt.</value>
+  </data>
+  <data name="Availability" xml:space="preserve">
+    <value>Verfügbarkeit</value>
+  </data>
+  <data name="Deactivating hides the hotel from all users and signs its members out. All data is kept and the hotel can be reactivated at any time." xml:space="preserve">
+    <value>Deaktivieren blendet das Hotel für alle Benutzer aus und meldet seine Mitglieder ab. Alle Daten bleiben erhalten; das Hotel kann jederzeit reaktiviert werden.</value>
+  </data>
+  <data name="Deactivate hotel" xml:space="preserve">
+    <value>Hotel deaktivieren</value>
+  </data>
+  <data name="Switch to another hotel before deactivating the one you are working in." xml:space="preserve">
+    <value>Wechseln Sie in ein anderes Hotel, bevor Sie das Hotel deaktivieren, in dem Sie gerade arbeiten.</value>
+  </data>
+  <data name="The hotel is deactivated. Its users cannot open it." xml:space="preserve">
+    <value>Das Hotel ist deaktiviert. Seine Benutzer können es nicht öffnen.</value>
+  </data>
+  <data name="Reactivate hotel" xml:space="preserve">
+    <value>Hotel reaktivieren</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="Create hotel" xml:space="preserve">
+    <value>Hotel anlegen</value>
+  </data>
+</root>

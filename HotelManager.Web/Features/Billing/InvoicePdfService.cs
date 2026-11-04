@@ -37,7 +37,10 @@ public sealed class InvoicePdfService : IInvoicePdfService
                             left.Item().Text("Leistungserbringer").SemiBold();
                             left.Item().Text(invoice.SellerName);
                             left.Item().Text(invoice.SellerAddress);
-                            left.Item().Text($"USt-IdNr.: {invoice.SellerVatId}");
+                            if (!string.IsNullOrWhiteSpace(invoice.SellerVatId))
+                            {
+                                left.Item().Text($"USt-IdNr.: {invoice.SellerVatId}");
+                            }
                         });
 
                         row.RelativeItem().Column(right =>

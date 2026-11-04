@@ -1,0 +1,369 @@
+@page "/platform/hotels"
+@attribute [Authorize(Policy = HotelPolicies.ManagePlatform)]
+@rendermode InteractiveServer
+@inject IPlatformHotelService HotelDirectory
+@inject IJSRuntime JS
+@inject IStringLocalizer<PlatformHotels> L
+
+<PageTitle>@L["All hotels"]</PageTitle>
+
+<div class="settings-page">
+    <header class="settings-header">
+        <div>
+            <h1>@L["All hotels"]</h1>
+            <p class="settings-subtitle">@L["Platform administration: create hotels, appoint their administrators and open any hotel."]</p>
+        </div>
+        <div class="settings-actions">
+            <button type="button" class="btn btn-primary" @onclick="OpenNewHotel">@L["+ New hotel"]</button>
+        </div>
+    </header>
+
+    @if (pageError is not null)
+    {
+        <div class="alert alert-danger" role="alert">@pageError</div>
+    }
+
+    @if (created is not null)
+    {
+        <div class="password-reveal" role="status">
+            <div>
+                <strong>@L["Hotel {0} was created.", created.Hotel.Name]</strong>
+                @if (created.AdminPassword is null)
+                {
+                    <p>@L["{0} already had an account and is now administrator of this hotel. The existing password stays valid.", created.AdminEmail]</p>
+                }
+                else
+                {
+                    <p>@L["One-time password for {0}. Hand it over securely; it will not be shown again.", created.AdminEmail]</p>
+                }
+            </div>
+            @if (created.AdminPassword is not null)
+            {
+                <code class="password-value">@created.AdminPassword</code>
+                <button type="button" class="btn btn-sm btn-outline-primary" @onclick="CopyPasswordAsync">@(passwordCopied ? L["Copied"] : L["Copy"])</button>
+            }
+            <button type="button" class="btn-close" aria-label="@L["Close"]" @onclick="() => created = null"></button>
+        </div>
+    }
+
+    <section class="inventory-card">
+        @if (hotels is null)
+        {
+            <p><em>@L["Loading..."]</em></p>
+        }
+        else
+        {
+            <div class="hotel-filter">
+                <input class="form-control form-control-sm" type="search" placeholder="@L["Search hotels"]" @bind="search" @bind:event="oninput" aria-label="@L["Search hotels"]" />
+                <span class="drawer-hint">@L["{0} hotels, {1} active", hotels.Count, hotels.Count(hotel => hotel.IsActive)]</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover inventory-table">
+                    <thead>
+                        <tr>
+                            <th>@L["Hotel"]</th>
+                            <th>@L["Location"]</th>
+                            <th>@L["Users"]</th>
+                            <th>@L["Status"]</th>
+                            <th>@L["Created"]</th>
+                            <th class="text-end">@L["Actions"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var hotel in FilteredHotels)
+                        {
+                            <tr class="inventory-row @(hotel.IsActive ? null : "archived") @(selected?.Id == hotel.Id ? "selected" : null)" @onclick="() => OpenHotel(hotel)">
+                                <td>
+                                    <strong>@hotel.Name</strong>
+                                    @if (hotel.IsCurrent)
+                                    {
+                                        <span class="you-badge">@L["Current"]</span>
+                                    }
+                                </td>
+                                <td>@string.Join(", ", new[] { hotel.City, hotel.Country }.Where(part => !string.IsNullOrWhiteSpace(part)))</td>
+                                <td>@hotel.MemberCount</td>
+                                <td>
+                                    @if (hotel.IsActive)
+                                    {
+                                        <span class="status-badge active">@L["Active"]</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge archived">@L["Deactivated"]</span>
+                                    }
+                                </td>
+                                <td>@hotel.CreatedAtUtc.ToLocalTime().ToString("d")</td>
+                                <td class="text-end" @onclick:stopPropagation>
+                                    @if (hotel.IsActive && !hotel.IsCurrent)
+                                    {
+                                        <form action="account/switch-hotel" method="post" class="d-inline">
+                                            <AntiforgeryToken />
+                                            <input type="hidden" name="hotelId" value="@hotel.Id" />
+                                            <input type="hidden" name="returnUrl" value="/room-planner" />
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">@L["Open"]</button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+</div>
+
+@if (drawerOpen)
+{
+    <div class="drawer-backdrop" @onclick="CloseDrawer"></div>
+    <aside class="inventory-drawer" role="dialog" aria-modal="true" aria-labelledby="hotel-drawer-title" tabindex="-1" @ref="drawerElement" @onkeydown="OnDrawerKeyDown">
+        <header class="inventory-drawer-header">
+            <h2 id="hotel-drawer-title">@(selected is null ? L["New hotel"] : selected.Name)</h2>
+            <button type="button" class="btn-close" aria-label="@L["Close"]" @onclick="CloseDrawer"></button>
+        </header>
+
+        <div class="inventory-drawer-body">
+            @if (drawerError is not null)
+            {
+                <div class="alert alert-danger mb-0" role="alert">@drawerError</div>
+            }
+
+            @if (selected is null)
+            {
+                <div class="form-grid">
+                    <label class="span-2">
+                        <span>@L["Hotel name"] *</span>
+                        <input class="form-control" @bind="formName" @bind:event="oninput" maxlength="120" />
+                    </label>
+                    <label>
+                        <span>@L["City"]</span>
+                        <input class="form-control" @bind="formCity" maxlength="100" />
+                    </label>
+                    <label>
+                        <span>@L["Country"]</span>
+                        <input class="form-control" @bind="formCountry" maxlength="100" />
+                    </label>
+                </div>
+
+                <h3 class="drawer-section">@L["Hotel administrator"]</h3>
+                <div class="form-grid">
+                    <label class="span-2">
+                        <span>@L["Email"] *</span>
+                        <input class="form-control" type="email" @bind="formAdminEmail" @bind:event="oninput" maxlength="256" />
+                    </label>
+                    <label class="span-2">
+                        <span>@L["Name"] *</span>
+                        <input class="form-control" @bind="formAdminName" @bind:event="oninput" maxlength="120" />
+                    </label>
+                </div>
+                <p class="drawer-hint">@L["A new account gets a one-time password. An existing account (e.g. your own) is added as administrator and keeps its password."]</p>
+
+                <label class="form-check">
+                    <input class="form-check-input" type="checkbox" @bind="formSeedDemoData" />
+                    <span class="form-check-label">@L["Add demo rooms, rates and reservations"]</span>
+                </label>
+                <p class="drawer-hint">@L["Address, VAT ID and time zone are completed afterwards in the hotel profile of the new hotel."]</p>
+            }
+            else
+            {
+                <dl class="hotel-facts">
+                    <dt>@L["Location"]</dt>
+                    <dd>@(string.Join(", ", new[] { selected.City, selected.Country }.Where(part => !string.IsNullOrWhiteSpace(part))) is { Length: > 0 } location ? location : "–")</dd>
+                    <dt>@L["Users"]</dt>
+                    <dd>@selected.MemberCount</dd>
+                    <dt>@L["Created"]</dt>
+                    <dd>@selected.CreatedAtUtc.ToLocalTime().ToString("g")</dd>
+                </dl>
+
+                <div class="danger-zone">
+                    <h3>@L["Availability"]</h3>
+                    @if (selected.IsActive)
+                    {
+                        <p>@L["Deactivating hides the hotel from all users and signs its members out. All data is kept and the hotel can be reactivated at any time."]</p>
+                        <div class="danger-actions">
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => SetActiveAsync(false)" disabled="@(busy || selected.IsCurrent)">@L["Deactivate hotel"]</button>
+                        </div>
+                        @if (selected.IsCurrent)
+                        {
+                            <p>@L["Switch to another hotel before deactivating the one you are working in."]</p>
+                        }
+                    }
+                    else
+                    {
+                        <p>@L["The hotel is deactivated. Its users cannot open it."]</p>
+                        <div class="danger-actions">
+                            <button type="button" class="btn btn-sm btn-outline-success" @onclick="() => SetActiveAsync(true)" disabled="@busy">@L["Reactivate hotel"]</button>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <footer class="inventory-drawer-footer">
+            <button type="button" class="btn btn-outline-secondary" @onclick="CloseDrawer">@(selected is null ? L["Cancel"] : L["Close"])</button>
+            @if (selected is null)
+            {
+                <button type="button" class="btn btn-primary" @onclick="CreateAsync" disabled="@(busy || !CanCreate)">@L["Create hotel"]</button>
+            }
+        </footer>
+    </aside>
+}
+
+@code {
+    private IReadOnlyList<PlatformHotelSummary>? hotels;
+    private PlatformHotelSummary? selected;
+    private PlatformHotelCreateResult? created;
+    private ElementReference drawerElement;
+    private bool drawerOpen;
+    private bool focusDrawer;
+    private bool busy;
+    private bool passwordCopied;
+    private string? pageError;
+    private string? drawerError;
+    private string search = string.Empty;
+    private string formName = string.Empty;
+    private string? formCity;
+    private string? formCountry;
+    private string formAdminEmail = string.Empty;
+    private string formAdminName = string.Empty;
+    private bool formSeedDemoData;
+
+    private bool CanCreate =>
+        !string.IsNullOrWhiteSpace(formName) &&
+        !string.IsNullOrWhiteSpace(formAdminEmail) &&
+        !string.IsNullOrWhiteSpace(formAdminName);
+
+    private IEnumerable<PlatformHotelSummary> FilteredHotels =>
+        string.IsNullOrWhiteSpace(search)
+            ? hotels ?? []
+            : (hotels ?? []).Where(hotel =>
+                hotel.Name.Contains(search.Trim(), StringComparison.CurrentCultureIgnoreCase) ||
+                (hotel.City?.Contains(search.Trim(), StringComparison.CurrentCultureIgnoreCase) ?? false) ||
+                (hotel.Country?.Contains(search.Trim(), StringComparison.CurrentCultureIgnoreCase) ?? false));
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (focusDrawer && drawerOpen)
+        {
+            focusDrawer = false;
+            await drawerElement.FocusAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            hotels = await HotelDirectory.GetHotelsAsync();
+            pageError = null;
+        }
+        catch (HotelValidationException exception)
+        {
+            pageError = exception.Message;
+            hotels = [];
+        }
+    }
+
+    private void OpenNewHotel()
+    {
+        selected = null;
+        formName = string.Empty;
+        formCity = null;
+        formCountry = null;
+        formAdminEmail = string.Empty;
+        formAdminName = string.Empty;
+        formSeedDemoData = false;
+        OpenDrawer();
+    }
+
+    private void OpenHotel(PlatformHotelSummary hotel)
+    {
+        selected = hotel;
+        OpenDrawer();
+    }
+
+    private void OpenDrawer()
+    {
+        drawerError = null;
+        drawerOpen = true;
+        focusDrawer = true;
+    }
+
+    private void CloseDrawer()
+    {
+        drawerOpen = false;
+        selected = null;
+        drawerError = null;
+    }
+
+    private void OnDrawerKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape")
+        {
+            CloseDrawer();
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        await RunAsync(async () =>
+        {
+            created = await HotelDirectory.CreateAsync(new PlatformHotelCreateRequest(
+                formName, formCity, formCountry, formAdminEmail, formAdminName, formSeedDemoData));
+            passwordCopied = false;
+            CloseDrawer();
+        });
+    }
+
+    private async Task SetActiveAsync(bool isActive)
+    {
+        if (selected is null)
+        {
+            return;
+        }
+
+        await RunAsync(async () =>
+        {
+            selected = await HotelDirectory.SetActiveAsync(selected.Id, isActive);
+        });
+    }
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        busy = true;
+        drawerError = null;
+        try
+        {
+            await action();
+            await LoadAsync();
+        }
+        catch (HotelValidationException exception)
+        {
+            drawerError = exception.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task CopyPasswordAsync()
+    {
+        if (created?.AdminPassword is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", created.AdminPassword);
+            passwordCopied = true;
+        }
+        catch (JSException)
+        {
+            passwordCopied = false;
+        }
+    }
+}

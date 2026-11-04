@@ -40,10 +40,12 @@ public sealed class DatabaseFixture : IAsyncLifetime
         services.AddLogging();
         services.AddLocalization();
         services.AddHotelManagerCore(connectionString);
+        services.AddHotelManagerIdentity();
         Services = services.BuildServiceProvider();
 
         await using var scope = Services.CreateAsyncScope();
         await using var db = await scope.ServiceProvider.GetRequiredService<IDbContextFactory<HotelDbContext>>().CreateDbContextAsync();
+        db.BypassRowLevelSecurity = true;
         await db.Database.MigrateAsync();
     }
 
@@ -52,6 +54,7 @@ public sealed class DatabaseFixture : IAsyncLifetime
         await using (var scope = Services.CreateAsyncScope())
         await using (var db = await scope.ServiceProvider.GetRequiredService<IDbContextFactory<HotelDbContext>>().CreateDbContextAsync())
         {
+            db.BypassRowLevelSecurity = true;
             await db.Database.EnsureDeletedAsync();
         }
 

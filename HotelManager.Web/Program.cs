@@ -5,6 +5,7 @@ using HotelManager.Web.Features.RoomPlanner;
 using HotelManager.Web.Features.Rooms;
 using HotelManager.Web.Infrastructure;
 using HotelManager.Web.Infrastructure.Hosting;
+using HotelManager.Web.Infrastructure.Identity;
 using HotelManager.Web.Infrastructure.Tenancy;
 using QuestPDF.Infrastructure;
 using System.Globalization;
@@ -127,6 +128,56 @@ app.MapPost("/account/logout", async (SignInManager<HotelManager.Web.Domain.Appl
     await signInManager.SignOutAsync();
     return Results.LocalRedirect("/account/login");
 });
+app.MapPost("/account/switch-hotel", async (
+    [FromForm] Guid? hotelId,
+    [FromForm] string? returnUrl,
+    HttpContext httpContext,
+    UserManager<HotelManager.Web.Domain.ApplicationUser> userManager,
+    SignInManager<HotelManager.Web.Domain.ApplicationUser> signInManager,
+    HotelAccessService hotelAccess) =>
+{
+    var user = await userManager.GetUserAsync(httpContext.User);
+    if (user is null)
+    {
+        return Results.LocalRedirect("/account/login");
+    }
+
+    // Without a hotel id the current sign-in is only refreshed (e.g. after the hotel was renamed).
+    if (hotelId is { } targetHotelId && targetHotelId != user.HotelId)
+    {
+        var accessible = await hotelAccess.GetAccessibleHotelsAsync(user, httpContext.RequestAborted);
+        if (accessible.All(hotel => hotel.HotelId != targetHotelId))
+        {
+            return Results.Forbid();
+        }
+
+        user.HotelId = targetHotelId;
+        var update = await userManager.UpdateAsync(user);
+        if (!update.Succeeded)
+        {
+            return Results.Problem("The hotel could not be switched.");
+        }
+    }
+
+    await signInManager.RefreshSignInAsync(user);
+    return Results.LocalRedirect(SafeLocalPath(returnUrl));
+}).RequireAuthorization();
+// Re-issues the caller's own cookie (e.g. after renaming the hotel); changes no data, so GET is safe.
+app.MapGet("/account/refresh-sign-in", async (
+    string? returnUrl,
+    HttpContext httpContext,
+    UserManager<HotelManager.Web.Domain.ApplicationUser> userManager,
+    SignInManager<HotelManager.Web.Domain.ApplicationUser> signInManager) =>
+{
+    var user = await userManager.GetUserAsync(httpContext.User);
+    if (user is null)
+    {
+        return Results.LocalRedirect("/account/login");
+    }
+
+    await signInManager.RefreshSignInAsync(user);
+    return Results.LocalRedirect(SafeLocalPath(returnUrl));
+}).RequireAuthorization();
 app.MapHealthChecks("/health");
 app.MapRoomPlannerApi();
 app.MapRoomInventoryApi();
@@ -135,6 +186,12 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
+
+static string SafeLocalPath(string? path) =>
+    !string.IsNullOrWhiteSpace(path) && path.StartsWith('/') && !path.StartsWith("//") && !path.StartsWith("/\\") &&
+    Uri.IsWellFormedUriString(path, UriKind.Relative)
+        ? path
+        : "/";
 
 static string ResolveWebRootPath(string baseDirectory)
 {

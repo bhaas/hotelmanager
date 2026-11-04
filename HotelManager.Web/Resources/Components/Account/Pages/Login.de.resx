@@ -36,4 +36,7 @@
   <data name="Invalid email address or password." xml:space="preserve">
     <value>E-Mail-Adresse oder Passwort ist falsch.</value>
   </data>
+  <data name="Your account has no access to an active hotel. Contact your administrator." xml:space="preserve">
+    <value>Ihr Konto hat keinen Zugriff auf ein aktives Hotel. Wenden Sie sich an Ihren Administrator.</value>
+  </data>
 </root>

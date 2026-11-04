@@ -33,4 +33,13 @@
   <data name="Users &amp; roles" xml:space="preserve">
     <value>Benutzer &amp; Rollen</value>
   </data>
+  <data name="Hotel profile" xml:space="preserve">
+    <value>Hotelprofil</value>
+  </data>
+  <data name="Platform" xml:space="preserve">
+    <value>Plattform</value>
+  </data>
+  <data name="All hotels" xml:space="preserve">
+    <value>Alle Hotels</value>
+  </data>
 </root>

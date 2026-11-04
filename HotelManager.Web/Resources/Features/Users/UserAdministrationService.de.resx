@@ -42,4 +42,13 @@
   <data name="Select a valid role." xml:space="preserve">
     <value>Bitte eine gültige Rolle auswählen.</value>
   </data>
+  <data name="This user already belongs to this hotel." xml:space="preserve">
+    <value>Dieser Benutzer gehört bereits zu diesem Hotel.</value>
+  </data>
+  <data name="This account also belongs to other hotels; only the platform administrator can rename it." xml:space="preserve">
+    <value>Dieses Konto gehört auch zu anderen Hotels; nur der Plattform-Administrator kann es umbenennen.</value>
+  </data>
+  <data name="This account also belongs to other hotels; only the platform administrator can reset its password." xml:space="preserve">
+    <value>Dieses Konto gehört auch zu anderen Hotels; nur der Plattform-Administrator kann das Passwort zurücksetzen.</value>
+  </data>
 </root>

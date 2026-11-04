@@ -1,0 +1,81 @@
+@using Microsoft.AspNetCore.Identity
+@inject HotelAccessService HotelAccess
+@inject UserManager<ApplicationUser> UserManager
+@inject NavigationManager Navigation
+@inject IStringLocalizer<HotelSwitcher> L
+
+@if (hotels is { Count: > 1 } || isPlatformAdmin)
+{
+    <details class="hotel-switcher">
+        <summary title="@L["Switch hotel"]">
+            <span class="hotel-switcher-name">@CurrentHotelName</span>
+            <span class="hotel-switcher-caret" aria-hidden="true">▾</span>
+        </summary>
+        <div class="hotel-switcher-menu" role="menu">
+            <div class="hotel-switcher-heading">@L["Switch hotel"]</div>
+            @foreach (var hotel in hotels ?? [])
+            {
+                <form action="account/switch-hotel" method="post" data-enhance="false">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="hotelId" value="@hotel.HotelId" />
+                    <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+                    <button type="submit" role="menuitem" class="hotel-switcher-item @(hotel.HotelId == currentHotelId ? "current" : null)" disabled="@(hotel.HotelId == currentHotelId)">
+                        <span class="hotel-switcher-item-name">@hotel.Name</span>
+                        <span class="hotel-switcher-item-meta">@(string.IsNullOrWhiteSpace(hotel.City) ? RoleLabel(hotel.Role) : $"{hotel.City} · {RoleLabel(hotel.Role)}")</span>
+                    </button>
+                </form>
+            }
+            @if (isPlatformAdmin)
+            {
+                <a class="hotel-switcher-manage" href="platform/hotels">@L["Manage all hotels"]</a>
+            }
+        </div>
+    </details>
+}
+else
+{
+    <span class="app-context" title="@L["Hotel"]">@CurrentHotelName</span>
+}
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private IReadOnlyList<AccessibleHotel>? hotels;
+    private Guid? currentHotelId;
+    private bool isPlatformAdmin;
+    private string? currentHotelName;
+
+    private string? CurrentHotelName => currentHotelName;
+
+    // Return to the same page in the new hotel; record-specific pages are not involved, so the path is safe to keep.
+    private string ReturnUrl => "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0];
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthenticationState is null)
+        {
+            return;
+        }
+
+        var principal = (await AuthenticationState).User;
+        currentHotelName = principal.FindFirst(HotelClaimTypes.HotelName)?.Value;
+        currentHotelId = Guid.TryParse(principal.FindFirst(HotelClaimTypes.HotelId)?.Value, out var id) ? id : null;
+        isPlatformAdmin = principal.IsInRole(PlatformRoles.PlatformAdmin);
+
+        var user = await UserManager.GetUserAsync(principal);
+        if (user is not null)
+        {
+            hotels = await HotelAccess.GetAccessibleHotelsAsync(user);
+        }
+    }
+
+    private string RoleLabel(string role) => role switch
+    {
+        HotelRoles.Admin => L["Administrator"],
+        HotelRoles.Manager => L["Manager"],
+        HotelRoles.FrontDesk => L["Front desk"],
+        HotelRoles.Housekeeping => L["Housekeeping"],
+        _ => role
+    };
+}

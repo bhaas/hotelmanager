@@ -120,4 +120,31 @@
   <data name="Sign-in only for now; the housekeeping app follows." xml:space="preserve">
     <value>Vorerst nur Anmeldung; die Housekeeping-App folgt.</value>
   </data>
+  <data name="This account also has access to other hotels." xml:space="preserve">
+    <value>Dieses Konto hat auch Zugriff auf andere Hotels.</value>
+  </data>
+  <data name="+{0} hotels" xml:space="preserve">
+    <value>+{0} Hotels</value>
+  </data>
+  <data name="Deactivated" xml:space="preserve">
+    <value>Deaktiviert</value>
+  </data>
+  <data name="A secure one-time password is generated when the user is created. If the email already has an account (e.g. in another hotel), that account is added to this hotel and keeps its password." xml:space="preserve">
+    <value>Beim Anlegen wird ein sicheres Einmalpasswort erzeugt. Existiert zur E-Mail bereits ein Konto (z. B. in einem anderen Hotel), wird dieses Konto dem Hotel hinzugefügt und behält sein Passwort.</value>
+  </data>
+  <data name="This account also belongs to other hotels. Name and password can only be changed by the platform administrator." xml:space="preserve">
+    <value>Dieses Konto gehört auch zu anderen Hotels. Name und Passwort kann nur der Plattform-Administrator ändern.</value>
+  </data>
+  <data name="Resetting the password or deactivating access to this hotel signs the user out of all sessions." xml:space="preserve">
+    <value>Das Zurücksetzen des Passworts oder das Deaktivieren des Zugriffs auf dieses Hotel meldet den Benutzer von allen Sitzungen ab.</value>
+  </data>
+  <data name="Reactivate access" xml:space="preserve">
+    <value>Zugriff reaktivieren</value>
+  </data>
+  <data name="Deactivate access" xml:space="preserve">
+    <value>Zugriff deaktivieren</value>
+  </data>
+  <data name="{0} already had an account and now has access to this hotel. The existing password stays valid." xml:space="preserve">
+    <value>{0} hatte bereits ein Konto und hat jetzt Zugriff auf dieses Hotel. Das bestehende Passwort bleibt gültig.</value>
+  </data>
 </root>
