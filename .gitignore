@@ -18,3 +18,8 @@ out/
 # OS files
 Thumbs.db
 Desktop.ini
+
+# Local secrets
+*-database-parameters.txt
+.env
+.env.*
