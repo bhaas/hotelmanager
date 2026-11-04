@@ -1,0 +1,23 @@
+.access-denied {
+    max-width: 32rem;
+    margin: 4rem auto;
+    padding: 2rem;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.9rem;
+    background: #fff;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.access-denied-icon {
+    font-size: 2.2rem;
+}
+
+.access-denied h1 {
+    font-size: 1.4rem;
+    margin: 0.5rem 0;
+}
+
+.access-denied p {
+    color: #64748b;
+}

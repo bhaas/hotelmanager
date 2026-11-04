@@ -1,4 +1,5 @@
 using HotelManager.Web.Features.RoomPlanner;
+using HotelManager.Web.Infrastructure.Identity;
 
 namespace HotelManager.Web.Features.Rooms;
 
@@ -6,7 +7,7 @@ public static class RoomInventoryApi
 {
     public static IEndpointRouteBuilder MapRoomInventoryApi(this IEndpointRouteBuilder app)
     {
-        var rooms = app.MapGroup("/api/rooms").WithTags("Rooms");
+        var rooms = app.MapGroup("/api/rooms").WithTags("Rooms").RequireAuthorization(HotelPolicies.ManageProperty);
 
         rooms.MapGet("/", (IRoomInventoryService service, CancellationToken cancellationToken) =>
             ExecuteAsync(() => service.GetRoomsAsync(cancellationToken)));
@@ -30,7 +31,7 @@ public static class RoomInventoryApi
                 return new { deleted = roomId };
             }));
 
-        var categories = app.MapGroup("/api/room-categories").WithTags("Room categories");
+        var categories = app.MapGroup("/api/room-categories").WithTags("Room categories").RequireAuthorization(HotelPolicies.ManageProperty);
 
         categories.MapGet("/", (IRoomInventoryService service, CancellationToken cancellationToken) =>
             ExecuteAsync(() => service.GetCategoriesAsync(cancellationToken)));

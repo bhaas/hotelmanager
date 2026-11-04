@@ -1,0 +1,49 @@
+.account-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: radial-gradient(circle at 15% 10%, #dbeafe 0%, transparent 45%),
+                linear-gradient(160deg, #f8fafc 0%, #eef2f7 100%);
+}
+
+.account-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+}
+
+.account-brand {
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: #0f2a5c;
+    letter-spacing: 0.01em;
+}
+
+.account-header ::deep .language-selector {
+    display: inline-flex;
+    border: 1px solid #d4dbe6;
+    border-radius: 999px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.account-header ::deep .language-link {
+    text-decoration: none;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    color: #415161;
+}
+
+.account-header ::deep .language-link.active {
+    background: #2563eb;
+    color: #fff;
+}
+
+.account-main {
+    flex: 1;
+    display: grid;
+    place-items: center;
+    padding: 1.5rem;
+}

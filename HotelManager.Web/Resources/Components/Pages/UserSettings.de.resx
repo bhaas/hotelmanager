@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+    <data name="Users &amp; roles" xml:space="preserve">
+    <value>Benutzer &amp; Rollen</value>
+  </data>
+  <data name="Invite your team and control what each role can see and change." xml:space="preserve">
+    <value>Laden Sie Ihr Team ein und legen Sie fest, was jede Rolle sehen und ändern darf.</value>
+  </data>
+  <data name="+ New user" xml:space="preserve">
+    <value>+ Neuer Benutzer</value>
+  </data>
+  <data name="One-time password for {0}" xml:space="preserve">
+    <value>Einmalpasswort für {0}</value>
+  </data>
+  <data name="Hand it over securely. The user should change it after the first sign-in. It will not be shown again." xml:space="preserve">
+    <value>Geben Sie es sicher weiter. Der Benutzer sollte es nach der ersten Anmeldung ändern. Es wird nicht erneut angezeigt.</value>
+  </data>
+  <data name="Copied" xml:space="preserve">
+    <value>Kopiert</value>
+  </data>
+  <data name="Copy" xml:space="preserve">
+    <value>Kopieren</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="Loading..." xml:space="preserve">
+    <value>Wird geladen...</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Email" xml:space="preserve">
+    <value>E-Mail</value>
+  </data>
+  <data name="Role" xml:space="preserve">
+    <value>Rolle</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Created" xml:space="preserve">
+    <value>Angelegt</value>
+  </data>
+  <data name="You" xml:space="preserve">
+    <value>Sie</value>
+  </data>
+  <data name="Locked" xml:space="preserve">
+    <value>Gesperrt</value>
+  </data>
+  <data name="Active" xml:space="preserve">
+    <value>Aktiv</value>
+  </data>
+  <data name="What can each role do?" xml:space="preserve">
+    <value>Was darf welche Rolle?</value>
+  </data>
+  <data name="New user" xml:space="preserve">
+    <value>Neuer Benutzer</value>
+  </data>
+  <data name="A secure one-time password is generated when the user is created." xml:space="preserve">
+    <value>Beim Anlegen wird ein sicheres Einmalpasswort erzeugt.</value>
+  </data>
+  <data name="Access" xml:space="preserve">
+    <value>Zugang</value>
+  </data>
+  <data name="Resetting the password or locking the account signs the user out of all sessions." xml:space="preserve">
+    <value>Passwort zurücksetzen oder Konto sperren meldet den Benutzer von allen Sitzungen ab.</value>
+  </data>
+  <data name="Reset password" xml:space="preserve">
+    <value>Passwort zurücksetzen</value>
+  </data>
+  <data name="Unlock account" xml:space="preserve">
+    <value>Konto entsperren</value>
+  </data>
+  <data name="Lock account" xml:space="preserve">
+    <value>Konto sperren</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="Create user" xml:space="preserve">
+    <value>Benutzer anlegen</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Speichern</value>
+  </data>
+  <data name="Administrator" xml:space="preserve">
+    <value>Administrator</value>
+  </data>
+  <data name="Manager" xml:space="preserve">
+    <value>Manager</value>
+  </data>
+  <data name="Front desk" xml:space="preserve">
+    <value>Rezeption</value>
+  </data>
+  <data name="Housekeeping" xml:space="preserve">
+    <value>Housekeeping</value>
+  </data>
+  <data name="Full access including users, rooms, rates and billing." xml:space="preserve">
+    <value>Vollzugriff inkl. Benutzer, Zimmer, Preise und Abrechnung.</value>
+  </data>
+  <data name="Room planner, billing, rooms, categories, rates and availability." xml:space="preserve">
+    <value>Zimmerplan, Abrechnung, Zimmer, Kategorien, Preise und Verfügbarkeit.</value>
+  </data>
+  <data name="Room planner, reservations, check-in/out and billing." xml:space="preserve">
+    <value>Zimmerplan, Reservierungen, Check-in/-out und Abrechnung.</value>
+  </data>
+  <data name="Sign-in only for now; the housekeeping app follows." xml:space="preserve">
+    <value>Vorerst nur Anmeldung; die Housekeeping-App folgt.</value>
+  </data>
+</root>

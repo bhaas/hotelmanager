@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+    <data name="A user with this email address already exists." xml:space="preserve">
+    <value>Ein Benutzer mit dieser E-Mail-Adresse existiert bereits.</value>
+  </data>
+  <data name="You cannot remove your own administrator role." xml:space="preserve">
+    <value>Sie können Ihre eigene Administratorrolle nicht entfernen.</value>
+  </data>
+  <data name="You cannot lock your own account." xml:space="preserve">
+    <value>Sie können Ihr eigenes Konto nicht sperren.</value>
+  </data>
+  <data name="No hotel selected." xml:space="preserve">
+    <value>Kein Hotel ausgewählt.</value>
+  </data>
+  <data name="User not found." xml:space="preserve">
+    <value>Benutzer nicht gefunden.</value>
+  </data>
+  <data name="The hotel needs at least one active administrator." xml:space="preserve">
+    <value>Das Hotel benötigt mindestens einen aktiven Administrator.</value>
+  </data>
+  <data name="Enter a valid email address." xml:space="preserve">
+    <value>Bitte eine gültige E-Mail-Adresse eingeben.</value>
+  </data>
+  <data name="Name is required." xml:space="preserve">
+    <value>Name ist erforderlich.</value>
+  </data>
+  <data name="Name cannot exceed 120 characters." xml:space="preserve">
+    <value>Der Name darf höchstens 120 Zeichen lang sein.</value>
+  </data>
+  <data name="Select a valid role." xml:space="preserve">
+    <value>Bitte eine gültige Rolle auswählen.</value>
+  </data>
+</root>

@@ -1,3 +1,5 @@
+using HotelManager.Web.Infrastructure.Identity;
+
 namespace HotelManager.Web.Features.RoomPlanner;
 
 public static class RoomPlannerApi
@@ -5,7 +7,8 @@ public static class RoomPlannerApi
     public static IEndpointRouteBuilder MapRoomPlannerApi(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/room-planner")
-            .WithTags("Room Planner");
+            .WithTags("Room Planner")
+            .RequireAuthorization(HotelPolicies.FrontOffice);
 
         group.MapGet("/", async (
             DateOnly? startDate,
@@ -97,7 +100,7 @@ public static class RoomPlannerApi
         {
             return await ExecuteRoomPlannerOperationAsync(
                 () => rateAvailabilityService.CreateRateRuleAsync(request, cancellationToken));
-        });
+        }).RequireAuthorization(HotelPolicies.ManageProperty);
 
         group.MapPost("/availability-rules", async (
             RoomAvailabilityRuleUpsertRequest request,
@@ -106,7 +109,7 @@ public static class RoomPlannerApi
         {
             return await ExecuteRoomPlannerOperationAsync(
                 () => rateAvailabilityService.CreateAvailabilityRuleAsync(request, cancellationToken));
-        });
+        }).RequireAuthorization(HotelPolicies.ManageProperty);
 
         group.MapPost("/rate-quote", async (
             RoomRateQuoteRequest request,

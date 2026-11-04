@@ -1,7 +1,9 @@
 namespace HotelManager.Web.Domain.Billing;
 
-public sealed class PaymentTransaction
+public sealed class PaymentTransaction : Domain.ITenantEntity
 {
+    public Guid HotelId { get; set; }
+
     public Guid Id { get; set; }
 
     public Guid ReservationId { get; set; }

@@ -1,7 +1,9 @@
 namespace HotelManager.Web.Domain;
 
-public sealed class RoomRateRule
+public sealed class RoomRateRule : ITenantEntity
 {
+    public Guid HotelId { get; set; }
+
     public Guid Id { get; set; }
 
     public string RoomType { get; set; } = string.Empty;

@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HotelManager.Web.Features.RoomPlanner;
 
+/// <summary>Creates demo rooms, categories, reservations and rates for the current hotel (tenant).</summary>
 public static class RoomPlannerSeedService
 {
     public static async Task SeedAsync(HotelDbContext dbContext, CancellationToken cancellationToken = default)
@@ -23,6 +24,17 @@ public static class RoomPlannerSeedService
             };
 
             dbContext.Rooms.AddRange(rooms);
+
+            if (!await dbContext.RoomCategories.AnyAsync(cancellationToken))
+            {
+                dbContext.RoomCategories.AddRange(
+                    new RoomCategory { Id = Guid.NewGuid(), Code = "CK", Name = "Classic King", StandardOccupancy = 2, MaxOccupancy = 2, SortOrder = 10 },
+                    new RoomCategory { Id = Guid.NewGuid(), Code = "CT", Name = "Classic Twin", StandardOccupancy = 2, MaxOccupancy = 2, SortOrder = 20 },
+                    new RoomCategory { Id = Guid.NewGuid(), Code = "DK", Name = "Deluxe King", StandardOccupancy = 2, MaxOccupancy = 3, SortOrder = 30 },
+                    new RoomCategory { Id = Guid.NewGuid(), Code = "DT", Name = "Deluxe Twin", StandardOccupancy = 2, MaxOccupancy = 3, SortOrder = 40 },
+                    new RoomCategory { Id = Guid.NewGuid(), Code = "SU", Name = "Suite", StandardOccupancy = 2, MaxOccupancy = 4, SortOrder = 50 },
+                    new RoomCategory { Id = Guid.NewGuid(), Code = "ES", Name = "Executive Suite", StandardOccupancy = 2, MaxOccupancy = 4, SortOrder = 60 });
+            }
 
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
             var reservations = new[]

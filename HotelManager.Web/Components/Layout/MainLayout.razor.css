@@ -15,7 +15,7 @@ main {
 .top-row {
     background-color: #f7f7f7;
     border-bottom: 1px solid #d6d5d5;
-    justify-content: flex-end;
+    justify-content: flex-start;
     height: 3.5rem;
     display: flex;
     align-items: center;
@@ -38,9 +38,46 @@ main {
     }
 
 .app-context {
-    color: #4c6078;
-    font-size: 0.9rem;
+    color: #1e293b;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.top-row-spacer {
+    flex: 1;
+}
+
+.top-row ::deep .user-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-left: 0;
+    color: #334155;
+    font-size: 0.88rem;
     font-weight: 600;
+}
+
+.user-avatar {
+    display: inline-grid;
+    place-items: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 50%;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+.logout-form {
+    margin: 0;
+}
+
+.top-row ::deep .logout-button {
+    margin-left: 0;
+    padding: 0.2rem 0.4rem;
+    color: #64748b;
+    font-size: 0.85rem;
 }
 
 .language-selector {

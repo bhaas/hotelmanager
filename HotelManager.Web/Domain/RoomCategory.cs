@@ -4,8 +4,10 @@ namespace HotelManager.Web.Domain;
 /// Sellable room category (e.g. "Deluxe King"). Rooms, rate rules and availability rules
 /// reference a category by its <see cref="Name"/>; renames are cascaded by the inventory service.
 /// </summary>
-public sealed class RoomCategory
+public sealed class RoomCategory : ITenantEntity
 {
+    public Guid HotelId { get; set; }
+
     public Guid Id { get; set; }
 
     public string Code { get; set; } = string.Empty;

@@ -1,7 +1,9 @@
 namespace HotelManager.Web.Domain.Billing;
 
-public sealed class InvoiceLine
+public sealed class InvoiceLine : Domain.ITenantEntity
 {
+    public Guid HotelId { get; set; }
+
     public Guid Id { get; set; }
 
     public Guid InvoiceDocumentId { get; set; }

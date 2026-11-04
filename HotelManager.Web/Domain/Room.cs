@@ -1,7 +1,9 @@
 namespace HotelManager.Web.Domain;
 
-public sealed class Room
+public sealed class Room : ITenantEntity
 {
+    public Guid HotelId { get; set; }
+
     public Guid Id { get; set; }
 
     public string Number { get; set; } = string.Empty;

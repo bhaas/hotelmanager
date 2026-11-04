@@ -1,0 +1,44 @@
+.auth-card {
+    width: min(24rem, 100%);
+    padding: 2rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 1rem;
+    background: #fff;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.08);
+}
+
+.auth-card h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 0.25rem;
+}
+
+.auth-subtitle {
+    color: #64748b;
+    margin-bottom: 1.25rem;
+}
+
+.auth-card ::deep .auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.auth-card ::deep .form-label {
+    margin: 0.5rem 0 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #334155;
+}
+
+.auth-card ::deep .form-check {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin: 0.75rem 0 1rem;
+    padding-left: 0;
+}
+
+.auth-card ::deep .form-check-input {
+    margin: 0;
+}

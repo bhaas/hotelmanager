@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: hotelapp
+          POSTGRES_PASSWORD: hotelapp
+          POSTGRES_DB: hotelmanager
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U hotelapp"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      HOTELMANAGER_TEST_DB: Host=localhost;Port=5432;Database=hotelmanager;Username=hotelapp;Password=hotelapp
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet restore HotelManager.slnx
+      - run: dotnet build HotelManager.slnx --no-restore -c Release
+      - run: dotnet test HotelManager.slnx --no-build -c Release
+      - name: Docker image builds
+        run: docker build -t hotelmanager:ci .

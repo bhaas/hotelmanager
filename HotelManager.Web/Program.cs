@@ -3,13 +3,17 @@ using HotelManager.Web.Data;
 using HotelManager.Web.Features.Billing;
 using HotelManager.Web.Features.RoomPlanner;
 using HotelManager.Web.Features.Rooms;
+using HotelManager.Web.Infrastructure;
+using HotelManager.Web.Infrastructure.Hosting;
+using HotelManager.Web.Infrastructure.Tenancy;
 using QuestPDF.Infrastructure;
 using System.Globalization;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
 var baseDirectory = AppContext.BaseDirectory;
@@ -24,11 +28,15 @@ var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
 QuestPDF.Settings.License = LicenseType.Community;
 
-var connectionString = builder.Configuration.GetConnectionString("HotelDb")
-    ?? builder.Configuration["HOTEL_DB_CONNECTION"]
-    ?? throw new InvalidOperationException("Database connection string missing. Set ConnectionStrings:HotelDb or HOTEL_DB_CONNECTION.");
-var initializeDatabaseOnStartup = builder.Environment.IsDevelopment() ||
-                                  builder.Configuration.GetValue("Database:InitializeOnStartup", false);
+if (!builder.Environment.IsDevelopment())
+{
+    // Lets the locally built exe reuse the developer's secrets; containers have no secrets file.
+    builder.Configuration.AddUserSecrets(typeof(Program).Assembly, optional: true);
+}
+
+var connectionString = DatabaseConnectionString.Resolve(builder.Configuration);
+var migrateDatabaseOnStartup = builder.Configuration.GetValue("Database:MigrateOnStartup", true);
+var bootstrapOptions = builder.Configuration.GetSection(BootstrapOptions.SectionName).Get<BootstrapOptions>() ?? new BootstrapOptions();
 var useHttpsRedirection = builder.Configuration.GetValue("Http:UseHttpsRedirection", builder.Environment.IsDevelopment());
 var supportedCultureNames = new[] { "en", "de" };
 
@@ -51,19 +59,8 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
 });
-builder.Services.AddDbContextFactory<HotelDbContext>(options =>
-{
-    options.UseNpgsql(connectionString, npgsqlOptions =>
-    {
-        npgsqlOptions.EnableRetryOnFailure(3, TimeSpan.FromSeconds(2), null);
-    });
-});
-builder.Services.AddScoped<IRoomPlannerQueryService, RoomPlannerQueryService>();
-builder.Services.AddScoped<IRoomPlannerCommandService, RoomPlannerCommandService>();
-builder.Services.AddScoped<IRateAvailabilityService, RateAvailabilityService>();
-builder.Services.AddScoped<IRoomInventoryService, RoomInventoryService>();
-builder.Services.AddScoped<IBillingService, BillingService>();
-builder.Services.AddSingleton<IInvoicePdfService, InvoicePdfService>();
+builder.Services.AddHotelManagerCore(connectionString);
+builder.Services.AddHotelManagerIdentity();
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<HotelDbContext>("postgres");
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -89,29 +86,15 @@ if (useHttpsRedirection)
 {
     app.UseHttpsRedirection();
 }
+app.UseAuthentication();
+app.UseTenantContext();
+app.UseAuthorization();
 app.UseAntiforgery();
 
-if (initializeDatabaseOnStartup)
+if (migrateDatabaseOnStartup)
 {
-    try
-    {
-        await using var scope = app.Services.CreateAsyncScope();
-        var dbContextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<HotelDbContext>>();
-        await using var dbContext = await dbContextFactory.CreateDbContextAsync();
-        await dbContext.Database.EnsureCreatedAsync();
-        await RateAvailabilitySchemaInitializer.EnsureSchemaAsync(dbContext);
-        await BillingSchemaInitializer.EnsureSchemaAsync(dbContext);
-        await HousekeepingSchemaInitializer.EnsureSchemaAsync(dbContext);
-        await RoomInventorySchemaInitializer.EnsureSchemaAsync(dbContext);
-        await RoomPlannerSeedService.SeedAsync(dbContext);
-        await RoomInventorySchemaInitializer.BackfillCategoriesAsync(dbContext);
-    }
-    catch (Exception exception)
-    {
-        app.Logger.LogWarning(
-            exception,
-            "Database initialization on startup failed. The app will continue running and retry on room planner requests.");
-    }
+    // Fail fast: a container that cannot reach or migrate its database should not report healthy.
+    await HotelBootstrapper.RunAsync(app.Services, bootstrapOptions, app.Logger);
 }
 
 app.MapStaticAssets();
@@ -138,6 +121,11 @@ app.MapGet("/set-culture", (string culture, string? redirectUri, HttpContext htt
     }
 
     return Results.LocalRedirect(localRedirect);
+});
+app.MapPost("/account/logout", async (SignInManager<HotelManager.Web.Domain.ApplicationUser> signInManager, [FromForm] string? returnUrl) =>
+{
+    await signInManager.SignOutAsync();
+    return Results.LocalRedirect("/account/login");
 });
 app.MapHealthChecks("/health");
 app.MapRoomPlannerApi();

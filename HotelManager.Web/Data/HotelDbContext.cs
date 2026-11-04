@@ -1,11 +1,31 @@
+using System.Reflection;
 using HotelManager.Web.Domain;
 using HotelManager.Web.Domain.Billing;
+using HotelManager.Web.Infrastructure.Tenancy;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace HotelManager.Web.Data;
 
-public sealed class HotelDbContext(DbContextOptions<HotelDbContext> options) : DbContext(options)
+/// <summary>
+/// Application database. Every <see cref="ITenantEntity"/> is automatically scoped to the hotel of the
+/// current <see cref="ITenantContext"/>: queries only return that hotel's rows and inserts are stamped
+/// with its id. Without a tenant, tenant data is invisible and cannot be written.
+/// </summary>
+public sealed class HotelDbContext(DbContextOptions<HotelDbContext> options, ITenantContext? tenantContext = null)
+    : IdentityDbContext<ApplicationUser>(options), IDataProtectionKeyContext
 {
+    private static readonly MethodInfo ConfigureTenantEntityMethod = typeof(HotelDbContext)
+        .GetMethod(nameof(ConfigureTenantEntity), BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+    /// <summary>Evaluated per query by the global filters; <see cref="Guid.Empty"/> matches nothing.</summary>
+    private Guid CurrentHotelId => tenantContext?.HotelId ?? Guid.Empty;
+
+    public DbSet<Hotel> Hotels => Set<Hotel>();
+
+    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
+
     public DbSet<Room> Rooms => Set<Room>();
 
     public DbSet<RoomCategory> RoomCategories => Set<RoomCategory>();
@@ -26,8 +46,65 @@ public sealed class HotelDbContext(DbContextOptions<HotelDbContext> options) : D
 
     public DbSet<InvoiceSequence> InvoiceSequences => Set<InvoiceSequence>();
 
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        ApplyTenantRules();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        ApplyTenantRules();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    private void ApplyTenantRules()
+    {
+        var hotelId = tenantContext?.HotelId;
+        foreach (var entry in ChangeTracker.Entries<ITenantEntity>())
+        {
+            switch (entry.State)
+            {
+                case EntityState.Added:
+                    if (entry.Entity.HotelId == Guid.Empty)
+                    {
+                        entry.Entity.HotelId = hotelId
+                            ?? throw new InvalidOperationException($"Cannot create {entry.Metadata.ClrType.Name} without a hotel context.");
+                    }
+                    else if (hotelId is not null && entry.Entity.HotelId != hotelId)
+                    {
+                        throw new InvalidOperationException($"Cannot create {entry.Metadata.ClrType.Name} for another hotel.");
+                    }
+
+                    break;
+                case EntityState.Modified or EntityState.Deleted:
+                    if (hotelId is null || entry.Entity.HotelId != hotelId || entry.Property(entity => entity.HotelId).IsModified)
+                    {
+                        throw new InvalidOperationException($"Cannot change {entry.Metadata.ClrType.Name} outside the current hotel.");
+                    }
+
+                    break;
+            }
+        }
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+
+        var hotelBuilder = modelBuilder.Entity<Hotel>();
+        hotelBuilder.HasKey(hotel => hotel.Id);
+        hotelBuilder.Property(hotel => hotel.Name).IsRequired().HasMaxLength(120);
+        hotelBuilder.Property(hotel => hotel.TimeZone).IsRequired().HasMaxLength(64);
+        hotelBuilder.Property(hotel => hotel.Currency).IsRequired().HasMaxLength(3);
+
+        var userBuilder = modelBuilder.Entity<ApplicationUser>();
+        userBuilder.Property(user => user.DisplayName).IsRequired().HasMaxLength(120);
+        userBuilder.HasOne(user => user.Hotel)
+            .WithMany()
+            .HasForeignKey(user => user.HotelId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         var roomBuilder = modelBuilder.Entity<Room>();
         roomBuilder.HasKey(room => room.Id);
         roomBuilder.Property(room => room.Number).IsRequired().HasMaxLength(12);
@@ -35,15 +112,15 @@ public sealed class HotelDbContext(DbContextOptions<HotelDbContext> options) : D
         roomBuilder.Property(room => room.HousekeepingStatus).HasConversion<string>().HasMaxLength(16);
         roomBuilder.Property(room => room.Features).HasMaxLength(300);
         roomBuilder.Property(room => room.Notes).HasMaxLength(500);
-        roomBuilder.HasIndex(room => room.Number).IsUnique();
+        roomBuilder.HasIndex(room => new { room.HotelId, room.Number }).IsUnique();
 
         var categoryBuilder = modelBuilder.Entity<RoomCategory>();
         categoryBuilder.HasKey(category => category.Id);
         categoryBuilder.Property(category => category.Code).IsRequired().HasMaxLength(10);
         categoryBuilder.Property(category => category.Name).IsRequired().HasMaxLength(40);
         categoryBuilder.Property(category => category.Description).HasMaxLength(500);
-        categoryBuilder.HasIndex(category => category.Code).IsUnique();
-        categoryBuilder.HasIndex(category => category.Name).IsUnique();
+        categoryBuilder.HasIndex(category => new { category.HotelId, category.Code }).IsUnique();
+        categoryBuilder.HasIndex(category => new { category.HotelId, category.Name }).IsUnique();
         categoryBuilder.ToTable(table =>
         {
             table.HasCheckConstraint("CK_RoomCategories_StandardOccupancyPositive", "\"StandardOccupancy\" > 0");
@@ -72,7 +149,7 @@ public sealed class HotelDbContext(DbContextOptions<HotelDbContext> options) : D
         roomRateRuleBuilder.Property(rule => rule.NightlyNetAmount).HasPrecision(12, 2);
         roomRateRuleBuilder.Property(rule => rule.VatRatePercent).HasPrecision(5, 2);
         roomRateRuleBuilder.Property(rule => rule.Currency).IsRequired().HasMaxLength(3);
-        roomRateRuleBuilder.HasIndex(rule => new { rule.RoomType, rule.StartDate, rule.EndDate });
+        roomRateRuleBuilder.HasIndex(rule => new { rule.HotelId, rule.RoomType, rule.StartDate, rule.EndDate });
         roomRateRuleBuilder.ToTable(table =>
         {
             table.HasCheckConstraint("CK_RoomRateRules_EndAfterStart", "\"EndDate\" > \"StartDate\"");
@@ -91,7 +168,7 @@ public sealed class HotelDbContext(DbContextOptions<HotelDbContext> options) : D
             .HasForeignKey(rule => rule.RoomId)
             .OnDelete(DeleteBehavior.Cascade);
         availabilityRuleBuilder.HasIndex(rule => new { rule.RoomId, rule.StartDate, rule.EndDate });
-        availabilityRuleBuilder.HasIndex(rule => new { rule.RoomType, rule.StartDate, rule.EndDate });
+        availabilityRuleBuilder.HasIndex(rule => new { rule.HotelId, rule.RoomType, rule.StartDate, rule.EndDate });
         availabilityRuleBuilder.ToTable(table =>
         {
             table.HasCheckConstraint("CK_RoomAvailabilityRules_EndAfterStart", "\"EndDate\" > \"StartDate\"");
@@ -156,7 +233,7 @@ public sealed class HotelDbContext(DbContextOptions<HotelDbContext> options) : D
             .WithMany(reservation => reservation.Invoices)
             .HasForeignKey(document => document.ReservationId)
             .OnDelete(DeleteBehavior.Cascade);
-        invoiceBuilder.HasIndex(document => document.InvoiceNumber).IsUnique();
+        invoiceBuilder.HasIndex(document => new { document.HotelId, document.InvoiceNumber }).IsUnique();
         invoiceBuilder.HasIndex(document => document.ReservationId).IsUnique();
         invoiceBuilder.ToTable(table =>
         {
@@ -185,11 +262,29 @@ public sealed class HotelDbContext(DbContextOptions<HotelDbContext> options) : D
         });
 
         var sequenceBuilder = modelBuilder.Entity<InvoiceSequence>();
-        sequenceBuilder.HasKey(sequence => sequence.Year);
+        sequenceBuilder.HasKey(sequence => new { sequence.HotelId, sequence.Year });
         sequenceBuilder.ToTable(table =>
         {
             table.HasCheckConstraint("CK_InvoiceSequences_YearRange", "\"Year\" >= 2000");
             table.HasCheckConstraint("CK_InvoiceSequences_LastNumberNonNegative", "\"LastNumber\" >= 0");
         });
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes()
+                     .Where(type => typeof(ITenantEntity).IsAssignableFrom(type.ClrType))
+                     .ToList())
+        {
+            ConfigureTenantEntityMethod.MakeGenericMethod(entityType.ClrType).Invoke(this, [modelBuilder]);
+        }
+    }
+
+    private void ConfigureTenantEntity<TEntity>(ModelBuilder modelBuilder)
+        where TEntity : class, ITenantEntity
+    {
+        var builder = modelBuilder.Entity<TEntity>();
+        builder.HasOne<Hotel>()
+            .WithMany()
+            .HasForeignKey(entity => entity.HotelId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasQueryFilter(entity => entity.HotelId == CurrentHotelId);
     }
 }

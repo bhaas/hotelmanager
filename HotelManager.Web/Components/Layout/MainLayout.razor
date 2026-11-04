@@ -1,4 +1,4 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 @inject IStringLocalizer<MainLayout> L
 
 <div class="page">
@@ -8,7 +8,20 @@
 
     <main>
         <div class="top-row px-4">
-            <span class="app-context">@L["Cloud-ready · .NET 10 · Blazor + PostgreSQL"]</span>
+            <AuthorizeView>
+                <Authorized>
+                    <span class="app-context" title="@L["Hotel"]">@context.User.FindFirst(HotelClaimTypes.HotelName)?.Value</span>
+                    <span class="top-row-spacer"></span>
+                    <a class="user-link" href="account/manage/password" title="@L["Change password"]">
+                        <span class="user-avatar" aria-hidden="true">@GetInitials(context.User.FindFirst(HotelClaimTypes.DisplayName)?.Value)</span>
+                        @context.User.FindFirst(HotelClaimTypes.DisplayName)?.Value
+                    </a>
+                    <form action="account/logout" method="post" class="logout-form">
+                        <AntiforgeryToken />
+                        <button type="submit" class="btn btn-link logout-button">@L["Sign out"]</button>
+                    </form>
+                </Authorized>
+            </AuthorizeView>
             <LanguageSelector />
         </div>
 
@@ -23,3 +36,11 @@
     <a href="." class="reload">@L["Reload"]</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    private static string GetInitials(string? name)
+    {
+        var parts = (name ?? string.Empty).Split([' ', '.', '@'], StringSplitOptions.RemoveEmptyEntries);
+        return string.Concat(parts.Take(2).Select(part => char.ToUpperInvariant(part[0])));
+    }
+}

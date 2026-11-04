@@ -21,4 +21,13 @@
   <data name="Reload" xml:space="preserve">
     <value>Neu laden</value>
   </data>
+  <data name="Hotel" xml:space="preserve">
+    <value>Hotel</value>
+  </data>
+  <data name="Change password" xml:space="preserve">
+    <value>Passwort ändern</value>
+  </data>
+  <data name="Sign out" xml:space="preserve">
+    <value>Abmelden</value>
+  </data>
 </root>

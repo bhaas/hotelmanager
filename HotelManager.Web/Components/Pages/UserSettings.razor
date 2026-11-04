@@ -1,0 +1,356 @@
+@page "/settings/users"
+@attribute [Authorize(Policy = HotelPolicies.ManageUsers)]
+@rendermode InteractiveServer
+@inject IUserAdministrationService UserAdministration
+@inject IJSRuntime JS
+@inject IStringLocalizer<UserSettings> L
+
+<PageTitle>@L["Users & roles"]</PageTitle>
+
+<div class="settings-page">
+    <header class="settings-header">
+        <div>
+            <h1>@L["Users & roles"]</h1>
+            <p class="settings-subtitle">@L["Invite your team and control what each role can see and change."]</p>
+        </div>
+        <div class="settings-actions">
+            <button type="button" class="btn btn-primary" @onclick="OpenNewUser">@L["+ New user"]</button>
+        </div>
+    </header>
+
+    @if (pageError is not null)
+    {
+        <div class="alert alert-danger" role="alert">@pageError</div>
+    }
+
+    @if (issuedPassword is not null)
+    {
+        <div class="password-reveal" role="status">
+            <div>
+                <strong>@L["One-time password for {0}", issuedPassword.User.Email]</strong>
+                <p>@L["Hand it over securely. The user should change it after the first sign-in. It will not be shown again."]</p>
+            </div>
+            <code class="password-value">@issuedPassword.Password</code>
+            <button type="button" class="btn btn-sm btn-outline-primary" @onclick="CopyPasswordAsync">@(passwordCopied ? L["Copied"] : L["Copy"])</button>
+            <button type="button" class="btn-close" aria-label="@L["Close"]" @onclick="() => issuedPassword = null"></button>
+        </div>
+    }
+
+    <section class="inventory-card">
+        @if (users is null)
+        {
+            <p><em>@L["Loading..."]</em></p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover inventory-table">
+                    <thead>
+                        <tr>
+                            <th>@L["Name"]</th>
+                            <th>@L["Email"]</th>
+                            <th>@L["Role"]</th>
+                            <th>@L["Status"]</th>
+                            <th>@L["Created"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in users)
+                        {
+                            <tr class="inventory-row @(user.IsLocked ? "archived" : null) @(selected?.Id == user.Id ? "selected" : null)" @onclick="() => OpenUser(user)">
+                                <td>
+                                    <strong>@user.DisplayName</strong>
+                                    @if (user.IsCurrentUser)
+                                    {
+                                        <span class="you-badge">@L["You"]</span>
+                                    }
+                                </td>
+                                <td>@user.Email</td>
+                                <td><span class="role-badge role-@user.Role.ToLowerInvariant()">@RoleLabel(user.Role)</span></td>
+                                <td>
+                                    @if (user.IsLocked)
+                                    {
+                                        <span class="status-badge archived">@L["Locked"]</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge active">@L["Active"]</span>
+                                    }
+                                </td>
+                                <td>@user.CreatedAtUtc.ToLocalTime().ToString("d")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+
+    <section class="role-matrix">
+        <h2>@L["What can each role do?"]</h2>
+        <div class="role-matrix-grid">
+            @foreach (var role in HotelRoles.All)
+            {
+                <div class="role-card">
+                    <span class="role-badge role-@role.ToLowerInvariant()">@RoleLabel(role)</span>
+                    <p>@RoleDescription(role)</p>
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+@if (drawerOpen)
+{
+    <div class="drawer-backdrop" @onclick="CloseDrawer"></div>
+    <aside class="inventory-drawer" role="dialog" aria-modal="true" aria-labelledby="user-drawer-title" tabindex="-1" @ref="drawerElement" @onkeydown="OnDrawerKeyDown">
+        <header class="inventory-drawer-header">
+            <h2 id="user-drawer-title">@(selected is null ? L["New user"] : selected.DisplayName)</h2>
+            <button type="button" class="btn-close" aria-label="@L["Close"]" @onclick="CloseDrawer"></button>
+        </header>
+
+        <div class="inventory-drawer-body">
+            @if (drawerError is not null)
+            {
+                <div class="alert alert-danger mb-0" role="alert">@drawerError</div>
+            }
+
+            <div class="form-grid">
+                <label class="span-2">
+                    <span>@L["Name"]</span>
+                    <input class="form-control" @bind="formDisplayName" @bind:event="oninput" maxlength="120" />
+                </label>
+                <label class="span-2">
+                    <span>@L["Email"]</span>
+                    <input class="form-control" type="email" @bind="formEmail" @bind:event="oninput" disabled="@(selected is not null)" maxlength="256" />
+                </label>
+                <label class="span-2">
+                    <span>@L["Role"]</span>
+                    <select class="form-select" @bind="formRole">
+                        @foreach (var role in HotelRoles.All)
+                        {
+                            <option value="@role">@RoleLabel(role)</option>
+                        }
+                    </select>
+                </label>
+            </div>
+            <p class="drawer-hint">@RoleDescription(formRole)</p>
+
+            @if (selected is null)
+            {
+                <p class="drawer-hint">@L["A secure one-time password is generated when the user is created."]</p>
+            }
+            else if (!selected.IsCurrentUser)
+            {
+                <div class="danger-zone">
+                    <h3>@L["Access"]</h3>
+                    <p>@L["Resetting the password or locking the account signs the user out of all sessions."]</p>
+                    <div class="danger-actions">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" @onclick="ResetPasswordAsync" disabled="@busy">@L["Reset password"]</button>
+                        @if (selected.IsLocked)
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-success" @onclick="() => SetLockedAsync(false)" disabled="@busy">@L["Unlock account"]</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => SetLockedAsync(true)" disabled="@busy">@L["Lock account"]</button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <footer class="inventory-drawer-footer">
+            <button type="button" class="btn btn-outline-secondary" @onclick="CloseDrawer">@L["Cancel"]</button>
+            <button type="button" class="btn btn-primary" @onclick="SaveAsync" disabled="@(busy || !CanSave)">
+                @(selected is null ? L["Create user"] : L["Save"])
+            </button>
+        </footer>
+    </aside>
+}
+
+@code {
+    private IReadOnlyList<UserSummary>? users;
+    private UserSummary? selected;
+    private UserPasswordResult? issuedPassword;
+    private ElementReference drawerElement;
+    private bool drawerOpen;
+    private bool focusDrawer;
+    private bool busy;
+    private bool passwordCopied;
+    private string? pageError;
+    private string? drawerError;
+    private string formDisplayName = string.Empty;
+    private string formEmail = string.Empty;
+    private string formRole = HotelRoles.FrontDesk;
+
+    private bool CanSave =>
+        !string.IsNullOrWhiteSpace(formDisplayName) &&
+        (selected is not null || !string.IsNullOrWhiteSpace(formEmail));
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (focusDrawer && drawerOpen)
+        {
+            focusDrawer = false;
+            await drawerElement.FocusAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            users = await UserAdministration.GetUsersAsync();
+            pageError = null;
+        }
+        catch (UserAdministrationException exception)
+        {
+            pageError = exception.Message;
+            users = [];
+        }
+    }
+
+    private void OpenNewUser()
+    {
+        selected = null;
+        formDisplayName = string.Empty;
+        formEmail = string.Empty;
+        formRole = HotelRoles.FrontDesk;
+        OpenDrawer();
+    }
+
+    private void OpenUser(UserSummary user)
+    {
+        selected = user;
+        formDisplayName = user.DisplayName;
+        formEmail = user.Email;
+        formRole = string.IsNullOrEmpty(user.Role) ? HotelRoles.FrontDesk : user.Role;
+        OpenDrawer();
+    }
+
+    private void OpenDrawer()
+    {
+        drawerError = null;
+        drawerOpen = true;
+        focusDrawer = true;
+    }
+
+    private void CloseDrawer()
+    {
+        drawerOpen = false;
+        selected = null;
+        drawerError = null;
+    }
+
+    private void OnDrawerKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape")
+        {
+            CloseDrawer();
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        await RunAsync(async () =>
+        {
+            if (selected is null)
+            {
+                issuedPassword = await UserAdministration.CreateAsync(new UserCreateRequest(formEmail, formDisplayName, formRole));
+                passwordCopied = false;
+            }
+            else
+            {
+                await UserAdministration.UpdateAsync(selected.Id, new UserUpdateRequest(formDisplayName, formRole));
+            }
+
+            CloseDrawer();
+        });
+    }
+
+    private async Task SetLockedAsync(bool locked)
+    {
+        if (selected is null)
+        {
+            return;
+        }
+
+        await RunAsync(async () =>
+        {
+            selected = await UserAdministration.SetLockedAsync(selected.Id, locked);
+        });
+    }
+
+    private async Task ResetPasswordAsync()
+    {
+        if (selected is null)
+        {
+            return;
+        }
+
+        await RunAsync(async () =>
+        {
+            issuedPassword = await UserAdministration.ResetPasswordAsync(selected.Id);
+            passwordCopied = false;
+            CloseDrawer();
+        });
+    }
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        busy = true;
+        drawerError = null;
+        try
+        {
+            await action();
+            await LoadAsync();
+        }
+        catch (UserAdministrationException exception)
+        {
+            drawerError = exception.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task CopyPasswordAsync()
+    {
+        if (issuedPassword is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", issuedPassword.Password);
+            passwordCopied = true;
+        }
+        catch (JSException)
+        {
+            passwordCopied = false;
+        }
+    }
+
+    private string RoleLabel(string role) => role switch
+    {
+        HotelRoles.Admin => L["Administrator"],
+        HotelRoles.Manager => L["Manager"],
+        HotelRoles.FrontDesk => L["Front desk"],
+        HotelRoles.Housekeeping => L["Housekeeping"],
+        _ => role
+    };
+
+    private string RoleDescription(string role) => role switch
+    {
+        HotelRoles.Admin => L["Full access including users, rooms, rates and billing."],
+        HotelRoles.Manager => L["Room planner, billing, rooms, categories, rates and availability."],
+        HotelRoles.FrontDesk => L["Room planner, reservations, check-in/out and billing."],
+        HotelRoles.Housekeeping => L["Sign-in only for now; the housekeeping app follows."],
+        _ => string.Empty
+    };
+}

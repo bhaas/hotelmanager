@@ -1,4 +1,5 @@
 @page "/room-planner"
+@attribute [Authorize(Policy = HotelPolicies.FrontOffice)]
 @using System.Globalization
 @rendermode InteractiveServer
 @inject IRoomPlannerQueryService RoomPlannerQueryService

@@ -1,7 +1,9 @@
 namespace HotelManager.Web.Domain;
 
-public sealed class RoomAvailabilityRule
+public sealed class RoomAvailabilityRule : ITenantEntity
 {
+    public Guid HotelId { get; set; }
+
     public Guid Id { get; set; }
 
     public Guid? RoomId { get; set; }

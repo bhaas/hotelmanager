@@ -1,3 +1,5 @@
+# Local production-like stack: PostgreSQL + web app (http://localhost:8080).
+# The first start prints the generated admin password in the web container log.
 services:
   postgres:
     image: postgres:17
@@ -22,8 +24,8 @@ services:
       dockerfile: Dockerfile
     container_name: hotelmanager-web
     environment:
-      ASPNETCORE_ENVIRONMENT: Production
-      HOTEL_DB_CONNECTION: Host=postgres;Port=5432;Database=hotelmanager;Username=hotelapp;Password=hotelapp
+      DATABASE_URL: postgres://hotelapp:hotelapp@postgres:5432/hotelmanager
+      Bootstrap__HotelName: Demo Hotel
     ports:
       - "8080:8080"
     depends_on:

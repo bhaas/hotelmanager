@@ -27,4 +27,10 @@
   <data name="Rooms &amp; categories" xml:space="preserve">
     <value>Zimmer &amp; Kategorien</value>
   </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Einstellungen</value>
+  </data>
+  <data name="Users &amp; roles" xml:space="preserve">
+    <value>Benutzer &amp; Rollen</value>
+  </data>
 </root>

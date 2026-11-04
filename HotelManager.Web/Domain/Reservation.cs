@@ -1,7 +1,9 @@
 namespace HotelManager.Web.Domain;
 
-public sealed class Reservation
+public sealed class Reservation : ITenantEntity
 {
+    public Guid HotelId { get; set; }
+
     public Guid Id { get; set; }
 
     public Guid RoomId { get; set; }

@@ -1,3 +1,5 @@
+using HotelManager.Web.Infrastructure.Identity;
+
 namespace HotelManager.Web.Features.Billing;
 
 public static class BillingApi
@@ -5,7 +7,8 @@ public static class BillingApi
     public static IEndpointRouteBuilder MapBillingApi(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/billing")
-            .WithTags("Billing");
+            .WithTags("Billing")
+            .RequireAuthorization(HotelPolicies.FrontOffice);
 
         group.MapGet("/reservations/{reservationId:guid}/folio", async (
             Guid reservationId,

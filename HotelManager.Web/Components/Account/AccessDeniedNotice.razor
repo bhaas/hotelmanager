@@ -1,0 +1,8 @@
+@inject IStringLocalizer<AccessDeniedNotice> L
+
+<section class="access-denied">
+    <div class="access-denied-icon" aria-hidden="true">🔒</div>
+    <h1>@L["Access denied"]</h1>
+    <p>@L["Your role does not allow access to this area. Ask an administrator if you need it."]</p>
+    <a class="btn btn-primary" href="/">@L["Back to start"]</a>
+</section>

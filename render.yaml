@@ -1,0 +1,28 @@
+# Render Blueprint (https://render.com/docs/blueprint-spec)
+# Free web service running the Docker image. The database is Neon Postgres (e.g. created via Vercel Storage);
+# paste its connection string into DATABASE_URL when Render asks for the secret values.
+services:
+  - type: web
+    name: hotelmanager
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    # Deploy only after the GitHub Actions CI (build + tests) succeeded.
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: DATABASE_URL
+        sync: false
+      - key: Bootstrap__HotelName
+        value: Demo Hotel
+      - key: Bootstrap__AdminEmail
+        sync: false
+      - key: Bootstrap__AdminPassword
+        sync: false
+      - key: Bootstrap__SeedDemoData
+        value: "true"
