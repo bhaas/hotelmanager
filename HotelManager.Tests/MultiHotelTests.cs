@@ -191,6 +191,54 @@ public sealed class MultiHotelTests(DatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task Admins_assign_users_to_the_other_hotels_they_administer()
+    {
+        var hotelA = await fixture.CreateHotelAsync("Group A");
+        var hotelB = await fixture.CreateHotelAsync("Group B");
+        var hotelC = await fixture.CreateHotelAsync("Group C");
+        var owner = await CreateUserAsync(hotelA, "group-owner", HotelRoles.Admin);
+        await AddMembershipAsync(owner.Id, hotelB, HotelRoles.Admin);
+        var member = await CreateUserAsync(hotelA, "group-member", HotelRoles.FrontDesk);
+
+        await using (var scope = CreateSignedInScope(hotelA, owner.Id, HotelRoles.Admin))
+        {
+            var administration = scope.ServiceProvider.GetRequiredService<IUserAdministrationService>();
+            var options = await administration.GetOtherHotelsAsync(member.Id);
+            var b = Assert.Single(options);
+            Assert.Equal((hotelB, true, false), (b.HotelId, b.CanEdit, b.HasAccess));
+
+            var summary = await administration.SetOtherHotelsAsync(member.Id, [new UserHotelAssignment(hotelB, HotelRoles.Manager)]);
+            Assert.Equal(1, summary.OtherHotelCount);
+            Assert.True(summary.CanManageAccount);
+
+            await Assert.ThrowsAsync<UserAdministrationException>(() =>
+                administration.SetOtherHotelsAsync(member.Id, [new UserHotelAssignment(hotelC, HotelRoles.FrontDesk)]));
+            await Assert.ThrowsAsync<UserAdministrationException>(() =>
+                administration.SetOtherHotelsAsync(owner.Id, [new UserHotelAssignment(hotelB, HotelRoles.Manager)]));
+        }
+
+        Assert.Equal(
+            [(hotelA, HotelRoles.FrontDesk), (hotelB, HotelRoles.Manager)],
+            (await GetAccessibleHotelsAsync(member.Id)).Select(hotel => (hotel.HotelId, hotel.Role)).OrderBy(item => item.HotelId == hotelB));
+
+        await using (var scope = CreateSignedInScope(hotelA, owner.Id, HotelRoles.Admin))
+        {
+            var administration = scope.ServiceProvider.GetRequiredService<IUserAdministrationService>();
+            await administration.SetOtherHotelsAsync(member.Id, [new UserHotelAssignment(hotelB, null)]);
+            Assert.False(Assert.Single(await administration.GetOtherHotelsAsync(member.Id)).HasAccess);
+        }
+
+        Assert.Equal([hotelA], (await GetAccessibleHotelsAsync(member.Id)).Select(hotel => hotel.HotelId));
+    }
+
+    private async Task<IReadOnlyList<AccessibleHotel>> GetAccessibleHotelsAsync(string userId)
+    {
+        await using var scope = fixture.CreateScope(null);
+        var user = (await scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>().FindByIdAsync(userId))!;
+        return await scope.ServiceProvider.GetRequiredService<HotelAccessService>().GetAccessibleHotelsAsync(user);
+    }
+
+    [Fact]
     public async Task Hotel_operating_settings_drive_invoice_numbers_footer_and_cash_limit()
     {
         var hotel = await fixture.CreateHotelAsync("Settings hotel");

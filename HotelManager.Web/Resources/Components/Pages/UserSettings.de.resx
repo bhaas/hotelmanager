@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -132,9 +132,6 @@
   <data name="A secure one-time password is generated when the user is created. If the email already has an account (e.g. in another hotel), that account is added to this hotel and keeps its password." xml:space="preserve">
     <value>Beim Anlegen wird ein sicheres Einmalpasswort erzeugt. Existiert zur E-Mail bereits ein Konto (z. B. in einem anderen Hotel), wird dieses Konto dem Hotel hinzugefügt und behält sein Passwort.</value>
   </data>
-  <data name="This account also belongs to other hotels. Name and password can only be changed by the platform administrator." xml:space="preserve">
-    <value>Dieses Konto gehört auch zu anderen Hotels. Name und Passwort kann nur der Plattform-Administrator ändern.</value>
-  </data>
   <data name="Resetting the password or deactivating access to this hotel signs the user out of all sessions." xml:space="preserve">
     <value>Das Zurücksetzen des Passworts oder das Deaktivieren des Zugriffs auf dieses Hotel meldet den Benutzer von allen Sitzungen ab.</value>
   </data>
@@ -146,5 +143,20 @@
   </data>
   <data name="{0} already had an account and now has access to this hotel. The existing password stays valid." xml:space="preserve">
     <value>{0} hatte bereits ein Konto und hat jetzt Zugriff auf dieses Hotel. Das bestehende Passwort bleibt gültig.</value>
+  </data>
+  <data name="This account also belongs to hotels you do not administer. Name and password can only be changed by an administrator of all its hotels." xml:space="preserve">
+    <value>Dieses Konto gehört auch zu Hotels, die Sie nicht verwalten. Name und Passwort kann nur ein Administrator aller seiner Hotels ändern.</value>
+  </data>
+  <data name="Access to other hotels" xml:space="preserve">
+    <value>Zugriff auf weitere Hotels</value>
+  </data>
+  <data name="Choose the other hotels this user may work in and the role there. The user switches between hotels in the header." xml:space="preserve">
+    <value>Wählen Sie, in welchen weiteren Hotels dieser Benutzer arbeiten darf und mit welcher Rolle. Der Benutzer wechselt die Hotels in der Kopfzeile.</value>
+  </data>
+  <data name="You do not administer this hotel." xml:space="preserve">
+    <value>Sie verwalten dieses Hotel nicht.</value>
+  </data>
+  <data name="Role in {0}" xml:space="preserve">
+    <value>Rolle in {0}</value>
   </data>
 </root>

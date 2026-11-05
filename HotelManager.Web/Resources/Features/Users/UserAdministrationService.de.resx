@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -45,10 +45,13 @@
   <data name="This user already belongs to this hotel." xml:space="preserve">
     <value>Dieser Benutzer gehört bereits zu diesem Hotel.</value>
   </data>
-  <data name="This account also belongs to other hotels; only the platform administrator can rename it." xml:space="preserve">
-    <value>Dieses Konto gehört auch zu anderen Hotels; nur der Plattform-Administrator kann es umbenennen.</value>
+  <data name="This account also belongs to hotels you do not administer; it can only be renamed by an administrator of all its hotels." xml:space="preserve">
+    <value>Dieses Konto gehört auch zu Hotels, die Sie nicht verwalten; nur ein Administrator aller seiner Hotels kann es umbenennen.</value>
   </data>
-  <data name="This account also belongs to other hotels; only the platform administrator can reset its password." xml:space="preserve">
-    <value>Dieses Konto gehört auch zu anderen Hotels; nur der Plattform-Administrator kann das Passwort zurücksetzen.</value>
+  <data name="This account also belongs to hotels you do not administer; only an administrator of all its hotels can reset its password." xml:space="preserve">
+    <value>Dieses Konto gehört auch zu Hotels, die Sie nicht verwalten; nur ein Administrator aller seiner Hotels kann das Passwort zurücksetzen.</value>
+  </data>
+  <data name="You can only assign hotels you administer." xml:space="preserve">
+    <value>Sie können nur Hotels zuweisen, die Sie verwalten.</value>
   </data>
 </root>

@@ -27,6 +27,15 @@ public sealed record UserUpdateRequest(string DisplayName, string Role);
 /// </summary>
 public sealed record UserPasswordResult(UserSummary User, string? Password);
 
+/// <summary>A user's access to a hotel other than the current one.</summary>
+/// <param name="Role">The membership role, or null when the user has never had access to this hotel.</param>
+/// <param name="HasAccess">True while the membership is active.</param>
+/// <param name="CanEdit">The caller administers this hotel and may grant, change or revoke the access.</param>
+public sealed record UserHotelAccess(Guid HotelId, string HotelName, string? City, string? Role, bool HasAccess, bool CanEdit);
+
+/// <summary>Grants access to a hotel with <see cref="Role"/>, or revokes it when <see cref="Role"/> is null.</summary>
+public sealed record UserHotelAssignment(Guid HotelId, string? Role);
+
 public sealed class UserAdministrationException(string message) : Exception(message);
 
 public interface IUserAdministrationService
@@ -42,4 +51,13 @@ public interface IUserAdministrationService
     Task<UserSummary> SetLockedAsync(string userId, bool locked, CancellationToken cancellationToken = default);
 
     Task<UserPasswordResult> ResetPasswordAsync(string userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The other hotels the caller administers (editable) plus the other hotels the user already belongs to (read-only
+    /// unless administered). Pass null for a user that is about to be created.
+    /// </summary>
+    Task<IReadOnlyList<UserHotelAccess>> GetOtherHotelsAsync(string? userId, CancellationToken cancellationToken = default);
+
+    /// <summary>Grants, changes or revokes the user's access to other hotels the caller administers.</summary>
+    Task<UserSummary> SetOtherHotelsAsync(string userId, IReadOnlyList<UserHotelAssignment> assignments, CancellationToken cancellationToken = default);
 }

@@ -1,4 +1,4 @@
-@page "/settings/users"
+﻿@page "/settings/users"
 @attribute [Authorize(Policy = HotelPolicies.ManageUsers)]
 @rendermode InteractiveServer
 @inject IUserAdministrationService UserAdministration
@@ -150,6 +150,35 @@
             </div>
             <p class="drawer-hint">@RoleDescription(formRole)</p>
 
+            @if (hotelAccess is { Count: > 0 })
+            {
+                <div class="hotel-access">
+                    <h3>@L["Access to other hotels"]</h3>
+                    <p>@L["Choose the other hotels this user may work in and the role there. The user switches between hotels in the header."]</p>
+                    @foreach (var hotel in hotelAccess)
+                    {
+                        <div class="hotel-access-row @(hotel.HasAccess ? "granted" : null)">
+                            <label class="hotel-access-name" title="@(hotel.CanEdit ? null : L["You do not administer this hotel."].Value)">
+                                <input type="checkbox" class="form-check-input" @bind="hotel.HasAccess" disabled="@(!hotel.CanEdit || busy)" />
+                                <span>
+                                    @hotel.Name
+                                    @if (!string.IsNullOrWhiteSpace(hotel.City))
+                                    {
+                                        <small>@hotel.City</small>
+                                    }
+                                </span>
+                            </label>
+                            <select class="form-select form-select-sm" @bind="hotel.Role" disabled="@(!hotel.CanEdit || !hotel.HasAccess || busy)" aria-label="@L["Role in {0}", hotel.Name]">
+                                @foreach (var role in HotelRoles.All)
+                                {
+                                    <option value="@role">@RoleLabel(role)</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                </div>
+            }
+
             @if (selected is null)
             {
                 <p class="drawer-hint">@L["A secure one-time password is generated when the user is created. If the email already has an account (e.g. in another hotel), that account is added to this hotel and keeps its password."]</p>
@@ -158,7 +187,7 @@
             {
                 @if (!selected.CanManageAccount)
                 {
-                    <p class="drawer-hint">@L["This account also belongs to other hotels. Name and password can only be changed by the platform administrator."]</p>
+                    <p class="drawer-hint">@L["This account also belongs to hotels you do not administer. Name and password can only be changed by an administrator of all its hotels."]</p>
                 }
                 <div class="danger-zone">
                     <h3>@L["Access"]</h3>
@@ -205,6 +234,21 @@
     private string formDisplayName = string.Empty;
     private string formEmail = string.Empty;
     private string formRole = HotelRoles.FrontDesk;
+    private List<HotelAccessRow>? hotelAccess;
+
+    private sealed class HotelAccessRow(UserHotelAccess access)
+    {
+        public Guid HotelId { get; } = access.HotelId;
+        public string Name { get; } = access.HotelName;
+        public string? City { get; } = access.City;
+        public bool CanEdit { get; } = access.CanEdit;
+        public bool HasAccess { get; set; } = access.HasAccess;
+        public string Role { get; set; } = access.Role ?? HotelRoles.FrontDesk;
+
+        public bool IsChanged => HasAccess != access.HasAccess || (HasAccess && Role != access.Role);
+
+        public UserHotelAssignment ToAssignment() => new(HotelId, HasAccess ? Role : null);
+    }
 
     private bool CanSave =>
         !string.IsNullOrWhiteSpace(formDisplayName) &&
@@ -235,29 +279,38 @@
         }
     }
 
-    private void OpenNewUser()
+    private async Task OpenNewUser()
     {
         selected = null;
         formDisplayName = string.Empty;
         formEmail = string.Empty;
         formRole = HotelRoles.FrontDesk;
-        OpenDrawer();
+        await OpenDrawerAsync(null);
     }
 
-    private void OpenUser(UserSummary user)
+    private async Task OpenUser(UserSummary user)
     {
         selected = user;
         formDisplayName = user.DisplayName;
         formEmail = user.Email;
         formRole = string.IsNullOrEmpty(user.Role) ? HotelRoles.FrontDesk : user.Role;
-        OpenDrawer();
+        await OpenDrawerAsync(user.Id);
     }
 
-    private void OpenDrawer()
+    private async Task OpenDrawerAsync(string? userId)
     {
         drawerError = null;
+        hotelAccess = null;
         drawerOpen = true;
         focusDrawer = true;
+        try
+        {
+            hotelAccess = (await UserAdministration.GetOtherHotelsAsync(userId)).Select(access => new HotelAccessRow(access)).ToList();
+        }
+        catch (UserAdministrationException exception)
+        {
+            drawerError = exception.Message;
+        }
     }
 
     private void CloseDrawer()
@@ -265,6 +318,7 @@
         drawerOpen = false;
         selected = null;
         drawerError = null;
+        hotelAccess = null;
     }
 
     private void OnDrawerKeyDown(KeyboardEventArgs args)
@@ -282,6 +336,7 @@
             if (selected is null)
             {
                 var created = await UserAdministration.CreateAsync(new UserCreateRequest(formEmail, formDisplayName, formRole));
+                await SaveHotelAccessAsync(created.User.Id);
                 issuedPassword = created.Password is null ? null : created;
                 pageNotice = created.Password is null
                     ? L["{0} already had an account and now has access to this hotel. The existing password stays valid.", created.User.Email].Value
@@ -291,10 +346,20 @@
             else
             {
                 await UserAdministration.UpdateAsync(selected.Id, new UserUpdateRequest(formDisplayName, formRole));
+                await SaveHotelAccessAsync(selected.Id);
             }
 
             CloseDrawer();
         });
+    }
+
+    private async Task SaveHotelAccessAsync(string userId)
+    {
+        var changes = hotelAccess?.Where(row => row.CanEdit && row.IsChanged).Select(row => row.ToAssignment()).ToList();
+        if (changes is { Count: > 0 })
+        {
+            await UserAdministration.SetOtherHotelsAsync(userId, changes);
+        }
     }
 
     private async Task SetLockedAsync(bool locked)

@@ -110,7 +110,7 @@ public sealed class UserAdministrationService(
         {
             if (!await CanManageAccountAsync(context, membership.User, hotelId, cancellationToken))
             {
-                throw new UserAdministrationException(localizer["This account also belongs to other hotels; only the platform administrator can rename it."]);
+                throw new UserAdministrationException(localizer["This account also belongs to hotels you do not administer; it can only be renamed by an administrator of all its hotels."]);
             }
 
             membership.User.DisplayName = displayName;
@@ -171,13 +171,121 @@ public sealed class UserAdministrationService(
         var membership = await FindMembershipAsync(context, hotelId, userId, cancellationToken);
         if (!await CanManageAccountAsync(context, membership.User, hotelId, cancellationToken))
         {
-            throw new UserAdministrationException(localizer["This account also belongs to other hotels; only the platform administrator can reset its password."]);
+            throw new UserAdministrationException(localizer["This account also belongs to hotels you do not administer; only an administrator of all its hotels can reset its password."]);
         }
 
         var password = PasswordGenerator.Create();
         var token = await context.Users.GeneratePasswordResetTokenAsync(membership.User);
         EnsureSucceeded(await context.Users.ResetPasswordAsync(membership.User, token, password));
         return new UserPasswordResult(await ToSummaryAsync(context, membership, cancellationToken), password);
+    }
+
+    public async Task<IReadOnlyList<UserHotelAccess>> GetOtherHotelsAsync(string? userId, CancellationToken cancellationToken = default)
+    {
+        var hotelId = RequireHotel();
+        await using var scope = CreateScope(hotelId);
+        var context = new OperationContext(scope);
+        var administered = (await GetAdministeredHotelsAsync(context, cancellationToken))
+            .Where(hotel => hotel.Id != hotelId)
+            .ToList();
+
+        var memberships = new List<HotelMembership>();
+        if (userId is not null)
+        {
+            await FindMembershipAsync(context, hotelId, userId, cancellationToken);
+            memberships = await context.Db.HotelMemberships
+                .AsNoTracking()
+                .Include(membership => membership.Hotel)
+                .Where(membership => membership.UserId == userId && membership.HotelId != hotelId)
+                .ToListAsync(cancellationToken);
+        }
+
+        var administeredIds = administered.Select(hotel => hotel.Id).ToHashSet();
+        var result = administered
+            .Select(hotel =>
+            {
+                var membership = memberships.FirstOrDefault(item => item.HotelId == hotel.Id);
+                return new UserHotelAccess(hotel.Id, hotel.Name, hotel.City, membership?.Role, membership?.IsActive == true, CanEdit: true);
+            })
+            .Concat(memberships
+                .Where(membership => !administeredIds.Contains(membership.HotelId))
+                .Select(membership => new UserHotelAccess(
+                    membership.HotelId, membership.Hotel.Name, membership.Hotel.City, membership.Role,
+                    membership.IsActive && membership.Hotel.IsActive, CanEdit: false)));
+
+        return result.OrderBy(hotel => hotel.HotelName, StringComparer.CurrentCultureIgnoreCase).ToList();
+    }
+
+    public async Task<UserSummary> SetOtherHotelsAsync(
+        string userId,
+        IReadOnlyList<UserHotelAssignment> assignments,
+        CancellationToken cancellationToken = default)
+    {
+        var hotelId = RequireHotel();
+        await using var scope = CreateScope(hotelId);
+        var context = new OperationContext(scope);
+        var current = await FindMembershipAsync(context, hotelId, userId, cancellationToken);
+        var administeredIds = (await GetAdministeredHotelsAsync(context, cancellationToken))
+            .Select(hotel => hotel.Id)
+            .Where(id => id != hotelId)
+            .ToHashSet();
+
+        if (assignments.Select(item => item.HotelId).Distinct().Count() != assignments.Count ||
+            assignments.Any(item => !administeredIds.Contains(item.HotelId)))
+        {
+            throw new UserAdministrationException(localizer["You can only assign hotels you administer."]);
+        }
+
+        var hotelIds = assignments.Select(item => item.HotelId).ToList();
+        var memberships = await context.Db.HotelMemberships
+            .Where(membership => membership.UserId == userId && hotelIds.Contains(membership.HotelId))
+            .ToListAsync(cancellationToken);
+        var changed = false;
+
+        foreach (var assignment in assignments)
+        {
+            var role = assignment.Role is null ? null : NormalizeRole(assignment.Role);
+            var membership = memberships.FirstOrDefault(item => item.HotelId == assignment.HotelId);
+            var losesAdmin = membership is { IsActive: true, Role: HotelRoles.Admin } && role != HotelRoles.Admin;
+            if (losesAdmin)
+            {
+                if (IsCurrentUser(userId))
+                {
+                    throw new UserAdministrationException(localizer["You cannot remove your own administrator role."]);
+                }
+
+                await EnsureAnotherActiveAdminAsync(context, assignment.HotelId, userId, cancellationToken);
+            }
+
+            if (role is null)
+            {
+                if (membership is { IsActive: true })
+                {
+                    membership.IsActive = false;
+                    changed = true;
+                }
+            }
+            else if (membership is null)
+            {
+                context.Db.HotelMemberships.Add(new HotelMembership { UserId = userId, HotelId = assignment.HotelId, Role = role });
+                changed = true;
+            }
+            else if (!membership.IsActive || membership.Role != role)
+            {
+                membership.IsActive = true;
+                membership.Role = role;
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            await context.Db.SaveChangesAsync(cancellationToken);
+            // Refreshes open sessions so the hotel switcher and permissions reflect the new access.
+            EnsureSucceeded(await context.Users.UpdateSecurityStampAsync(current.User));
+        }
+
+        return await ToSummaryAsync(context, current, cancellationToken);
     }
 
     private sealed class OperationContext(AsyncServiceScope scope)
@@ -201,6 +309,24 @@ public sealed class UserAdministrationService(
         return scope;
     }
 
+    private string? CallerId => tenantContext.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+
+    /// <summary>Active hotels in which the caller is an active administrator; every active hotel for platform administrators.</summary>
+    private async Task<List<Hotel>> GetAdministeredHotelsAsync(OperationContext context, CancellationToken cancellationToken)
+    {
+        var callerId = CallerId;
+        var platformAdmin = CallerIsPlatformAdmin;
+        return await context.Db.Hotels
+            .AsNoTracking()
+            .Where(hotel => hotel.IsActive)
+            .Where(hotel => platformAdmin || context.Db.HotelMemberships.Any(membership =>
+                membership.HotelId == hotel.Id &&
+                membership.UserId == callerId &&
+                membership.IsActive &&
+                membership.Role == HotelRoles.Admin))
+            .ToListAsync(cancellationToken);
+    }
+
     private bool IsCurrentUser(string userId) =>
         string.Equals(tenantContext.User?.FindFirstValue(ClaimTypes.NameIdentifier), userId, StringComparison.Ordinal);
 
@@ -217,8 +343,21 @@ public sealed class UserAdministrationService(
             return true;
         }
 
-        return await CountOtherHotelsAsync(context, user.Id, hotelId, cancellationToken) == 0 &&
-               !await context.Users.IsInRoleAsync(user, PlatformRoles.PlatformAdmin);
+        if (await context.Users.IsInRoleAsync(user, PlatformRoles.PlatformAdmin))
+        {
+            return false;
+        }
+
+        // Account-wide changes are allowed when the caller administers every hotel the account belongs to.
+        var callerId = CallerId;
+        return !await context.Db.HotelMemberships.AnyAsync(membership =>
+            membership.UserId == user.Id &&
+            membership.HotelId != hotelId &&
+            !context.Db.HotelMemberships.Any(admin =>
+                admin.HotelId == membership.HotelId &&
+                admin.UserId == callerId &&
+                admin.IsActive &&
+                admin.Role == HotelRoles.Admin), cancellationToken);
     }
 
     private static Task<int> CountOtherHotelsAsync(OperationContext context, string userId, Guid hotelId, CancellationToken cancellationToken) =>
