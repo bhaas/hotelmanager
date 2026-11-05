@@ -19,7 +19,7 @@ public static class Beds24Endpoints
             {
                 if (key.Length is < 32 or > 64)
                 {
-                    return Results.NotFound();
+                    return Results.NotFound(new { success = false });
                 }
 
                 await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
@@ -29,7 +29,7 @@ public static class Beds24Endpoints
                     .SingleOrDefaultAsync(cancellationToken);
                 if (hotelId is null)
                 {
-                    return Results.NotFound();
+                    return Results.NotFound(new { success = false });
                 }
 
                 coordinator.RequestSync(hotelId.Value);
