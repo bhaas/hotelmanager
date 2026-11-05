@@ -77,6 +77,32 @@ public sealed class GuestAndImportTests(DatabaseFixture fixture)
     }
 
     [Fact]
+    public async Task Booking_com_extranet_export_with_german_long_dates_is_readable()
+    {
+        var hotelId = await fixture.CreateHotelAsync("Extranet export hotel");
+        var german = System.Globalization.CultureInfo.GetCultureInfo("de-DE");
+        string Date(DateOnly date) => date.ToString("d. MMMM yyyy", german);
+        var checkIn = Today.AddDays(30);
+        var csv = string.Join("\r\n",
+            "Unterkunftsname;Lage;Name des Buchers;Genius-Bucher;Anreise;Abreise;Gebucht am;Status;Gesamtbetrag;Kommission;Währung;Buchungsnummer",
+            $"Hotel Klima;Neustift;Axel Rohkohl;Nein;{Date(checkIn)};{Date(checkIn.AddDays(7))};{Date(Today)};Ok;1085;145.39;EUR;5115311812",
+            $"Hotel Klima;Neustift;Yiyi Zhao;Nein;{Date(checkIn)};{Date(checkIn.AddDays(18))};{Date(Today)};Storniert;2790;0;EUR;5983481908");
+        var table = ImportFileReader.Read(Encoding.UTF8.GetBytes(csv), "Buchungen.csv");
+
+        await using var scope = fixture.CreateScope(hotelId);
+        var importer = scope.ServiceProvider.GetRequiredService<IBookingComImportService>();
+        var options = await OptionsAsync(importer, table);
+        Assert.True(options.Columns.ContainsKey(BookingComField.BookedBy));
+        Assert.True(options.Columns.ContainsKey(BookingComField.Price));
+
+        var preview = await importer.PreviewAsync(table, options);
+        Assert.Equal([checkIn, checkIn], preview.Rows.Select(row => row.CheckIn));
+        Assert.Equal([checkIn.AddDays(7), checkIn.AddDays(18)], preview.Rows.Select(row => row.CheckOut));
+        Assert.Equal([false, true], preview.Rows.Select(row => row.IsCancelled));
+        Assert.Equal("Axel Rohkohl", preview.Rows[0].GuestName);
+    }
+
+    [Fact]
     public async Task Booking_com_import_creates_reservations_and_reimport_updates_and_cancels()
     {
         var hotelId = await fixture.CreateHotelAsync("Import hotel");

@@ -1,4 +1,4 @@
-using System.Data;
+﻿using System.Data;
 using System.Globalization;
 using System.Text;
 using HotelManager.Web.Data;
@@ -24,7 +24,7 @@ public sealed class BookingComImportService(
     [
         (BookingComField.BookingNumber, ["booknumber", "bookingnumber", "reservationnumber", "bookingid", "reservationid", "buchungsnummer", "reservierungsnummer"]),
         (BookingComField.GuestName, ["guestnames", "guestname", "nameofguest", "nameofguests", "gastname", "gastnamen", "namedesgastes", "namedergaste", "gaste", "gast"]),
-        (BookingComField.BookedBy, ["bookedby", "booker", "bookername", "gebuchtvon", "buchender"]),
+        (BookingComField.BookedBy, ["bookedby", "booker", "bookername", "gebuchtvon", "buchender", "namedesbuchers", "nameofbooker"]),
         (BookingComField.CheckIn, ["checkin", "checkindate", "arrival", "arrivaldate", "anreise", "anreisedatum"]),
         (BookingComField.CheckOut, ["checkout", "checkoutdate", "departure", "departuredate", "abreise", "abreisedatum"]),
         (BookingComField.Status, ["status", "bookingstatus", "reservationstatus", "buchungsstatus"]),
@@ -33,7 +33,7 @@ public sealed class BookingComImportService(
         (BookingComField.Adults, ["adults", "erwachsene"]),
         (BookingComField.Children, ["children", "kinder"]),
         (BookingComField.UnitType, ["unittype", "roomtype", "roomname", "unitname", "zimmertyp", "zimmerart", "zimmerkategorie", "unterkunftstyp", "einheitentyp", "einheit"]),
-        (BookingComField.Price, ["price", "totalprice", "totalamount", "preis", "gesamtpreis", "betrag"]),
+        (BookingComField.Price, ["price", "totalprice", "totalamount", "preis", "gesamtpreis", "gesamtbetrag", "betrag"]),
         (BookingComField.Commission, ["commissionamount", "commission", "provisionsbetrag", "provision", "kommission"]),
         (BookingComField.Remarks, ["remarks", "specialrequests", "comments", "notes", "anmerkungen", "bemerkungen", "besonderewunsche"]),
         (BookingComField.Email, ["email", "emailaddress", "guestemail", "emailadresse"]),
@@ -46,8 +46,14 @@ public sealed class BookingComImportService(
     [
         "yyyy-MM-dd", "yyyy-MM-dd HH:mm", "yyyy-MM-dd HH:mm:ss", "yyyy-MM-ddTHH:mm:ss",
         "dd.MM.yyyy", "d.M.yyyy", "dd.MM.yy", "dd/MM/yyyy", "d/M/yyyy",
-        "d MMM yyyy", "d MMMM yyyy", "MMM d, yyyy", "MMMM d, yyyy", "ddd, d MMM yyyy", "ddd d MMM yyyy"
+        "d MMM yyyy", "d MMMM yyyy", "MMM d, yyyy", "MMMM d, yyyy", "ddd, d MMM yyyy", "ddd d MMM yyyy",
+        // Booking.com Extranet export in German, e.g. "12. November 2026" or "Do., 12. Nov. 2026".
+        "d. MMMM yyyy", "d. MMM yyyy", "ddd, d. MMMM yyyy", "ddd, d. MMM yyyy", "dddd, d. MMMM yyyy"
     ];
+
+    // de-DE uses "Januar", de-AT "Jänner"; Booking.com exports use either depending on the account language.
+    private static readonly CultureInfo[] DateCultures =
+        new[] { "", "de-DE", "de-AT", "en-GB", "en-US" }.Select(CultureInfo.GetCultureInfo).ToArray();
 
     public IReadOnlyDictionary<BookingComField, int> DetectColumns(IReadOnlyList<string> headers)
     {
@@ -566,7 +572,7 @@ public sealed class BookingComImportService(
         }
 
         var text = value.Trim();
-        foreach (var culture in new[] { CultureInfo.InvariantCulture, CultureInfo.GetCultureInfo("de-AT") })
+        foreach (var culture in DateCultures)
         {
             if (DateTime.TryParseExact(text, DateFormats, culture, DateTimeStyles.AllowWhiteSpaces, out var exact))
             {
