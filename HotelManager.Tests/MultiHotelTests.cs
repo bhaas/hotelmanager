@@ -26,7 +26,8 @@ public sealed class MultiHotelTests(DatabaseFixture fixture)
 
         var tenantTables = db.Model.GetEntityTypes()
             .Where(entity => entity.FindProperty("HotelId") is not null)
-            .Where(entity => entity.ClrType != typeof(ApplicationUser) && entity.ClrType != typeof(HotelMembership))
+            // Intentionally without RLS: looked up across hotels at sign-in, by the Beds24 worker and its webhook.
+            .Where(entity => entity.ClrType != typeof(ApplicationUser) && entity.ClrType != typeof(HotelMembership) && entity.ClrType != typeof(Beds24Connection))
             .Select(entity => entity.GetTableName()!)
             .Order()
             .ToList();

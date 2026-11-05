@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+    <data name="Enter the invite code from Beds24." xml:space="preserve">
+    <value>Geben Sie den Einladungscode aus Beds24 ein.</value>
+  </data>
+  <data name="Beds24 did not accept the invite code: {0}" xml:space="preserve">
+    <value>Beds24 hat den Einladungscode nicht akzeptiert: {0}</value>
+  </data>
+  <data name="The property was not found in Beds24." xml:space="preserve">
+    <value>Die Unterkunft wurde in Beds24 nicht gefunden.</value>
+  </data>
+  <data name="Room category {0} does not exist." xml:space="preserve">
+    <value>Die Zimmerkategorie {0} existiert nicht.</value>
+  </data>
+  <data name="Choose the Beds24 property first." xml:space="preserve">
+    <value>Wählen Sie zuerst die Beds24-Unterkunft.</value>
+  </data>
+  <data name="The reservation could not be saved." xml:space="preserve">
+    <value>Die Reservierung konnte nicht gespeichert werden.</value>
+  </data>
+  <data name="Cancelled in Beds24, but the guest has already checked in. Check manually." xml:space="preserve">
+    <value>In Beds24 storniert, aber der Gast ist bereits eingecheckt. Bitte manuell prüfen.</value>
+  </data>
+  <data name="Assign a room category to the Beds24 room type &quot;{0}&quot;." xml:space="preserve">
+    <value>Ordnen Sie dem Beds24-Zimmertyp "{0}" eine Zimmerkategorie zu.</value>
+  </data>
+  <data name="No free room in category {0}." xml:space="preserve">
+    <value>Kein freies Zimmer in Kategorie {0}.</value>
+  </data>
+  <data name="No free room in category {0} for the new dates." xml:space="preserve">
+    <value>Kein freies Zimmer in Kategorie {0} für die neuen Daten.</value>
+  </data>
+  <data name="Price: {0}" xml:space="preserve">
+    <value>Preis: {0}</value>
+  </data>
+  <data name="Commission: {0}" xml:space="preserve">
+    <value>Provision: {0}</value>
+  </data>
+  <data name="Beds24 rejected the access ({0}). Connect again with a new invite code." xml:space="preserve">
+    <value>Beds24 hat den Zugriff abgelehnt ({0}). Verbinden Sie neu mit einem neuen Einladungscode.</value>
+  </data>
+  <data name="This hotel is not connected to Beds24." xml:space="preserve">
+    <value>Dieses Hotel ist nicht mit Beds24 verbunden.</value>
+  </data>
+  <data name="The stored Beds24 access cannot be read anymore. Connect again with a new invite code." xml:space="preserve">
+    <value>Der gespeicherte Beds24-Zugang kann nicht mehr gelesen werden. Verbinden Sie neu mit einem neuen Einladungscode.</value>
+  </data>
+  <data name="No hotel selected." xml:space="preserve">
+    <value>Kein Hotel ausgewählt.</value>
+  </data>
+  <data name="Only administrators can manage the Beds24 connection." xml:space="preserve">
+    <value>Nur Administratoren können die Beds24-Verbindung verwalten.</value>
+  </data>
+</root>

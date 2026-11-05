@@ -372,32 +372,10 @@ public sealed class BookingComImportService(
             return known;
         }
 
-        if (unit.Email is not null)
-        {
-            var email = unit.Email.ToLowerInvariant();
-            var match = await dbContext.Guests
-                .Where(guest => guest.AnonymizedAtUtc == null && guest.Email != null && guest.Email.ToLower() == email)
-                .Select(guest => (Guid?)guest.Id)
-                .FirstOrDefaultAsync(cancellationToken);
-            if (match is { } id)
-            {
-                return id;
-            }
-        }
-
-        var (firstName, lastName) = GuestNames.Split(unit.GuestName);
-        var guest = new Guest
-        {
-            Id = Guid.NewGuid(),
-            FirstName = Truncate(firstName, 80),
-            LastName = Truncate(lastName, 120)!,
-            Email = unit.Email,
-            Phone = Truncate(unit.Phone, 40),
-            Country = Truncate(unit.Country, 100),
-            Street = Truncate(unit.Address, 200)
-        };
-        dbContext.Guests.Add(guest);
-        return guest.Id;
+        return await GuestProfileResolver.FindOrCreateAsync(
+            dbContext,
+            new ChannelGuestData(unit.GuestName, Email: unit.Email, Phone: unit.Phone, Street: unit.Address, Country: unit.Country),
+            cancellationToken);
     }
 
     private string BuildNotes(ParsedUnit unit)

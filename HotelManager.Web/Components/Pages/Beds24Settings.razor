@@ -1,0 +1,369 @@
+@page "/settings/beds24"
+@attribute [Authorize(Policy = HotelPolicies.ManageUsers)]
+@rendermode InteractiveServer
+@using HotelManager.Web.Features.Integrations.Beds24
+@inject IBeds24SyncService Beds24
+@inject IHotelProfileService HotelProfiles
+@inject NavigationManager Navigation
+@inject IStringLocalizer<Beds24Settings> L
+
+<PageTitle>@L["Beds24 channel manager"]</PageTitle>
+
+<div class="settings-page">
+    <header class="settings-header">
+        <div>
+            <h1>@L["Beds24 channel manager"]</h1>
+            <p class="settings-subtitle">@L["Bookings from Beds24 (Booking.com, Airbnb, Expedia ...) are imported automatically into the room planner every 10 minutes."]</p>
+        </div>
+    </header>
+
+    @if (message is not null)
+    {
+        <div class="alert alert-success alert-dismissible" role="status">
+            @message
+            <button type="button" class="btn-close" aria-label="@L["Close"]" @onclick="() => message = null"></button>
+        </div>
+    }
+
+    @if (error is not null)
+    {
+        <div class="alert alert-danger alert-dismissible" role="alert">
+            @error
+            <button type="button" class="btn-close" aria-label="@L["Close"]" @onclick="() => error = null"></button>
+        </div>
+    }
+
+    @if (!loaded)
+    {
+        <p><em>@L["Loading..."]</em></p>
+    }
+    else if (status is null)
+    {
+        <section class="inventory-card">
+            <h2>@L["Connect Beds24"]</h2>
+            <ol class="beds24-steps">
+                <li>@L["In Beds24 open Settings → Apps & Integrations → API."]</li>
+                <li>@L["Generate an invite code with the scopes \"bookings\", \"bookings-personal\" (read) and \"properties\" (read)."]</li>
+                <li>@L["Paste the invite code here. It can only be used once and expires after a few minutes."]</li>
+            </ol>
+            <form class="beds24-connect" @onsubmit="ConnectAsync" @onsubmit:preventDefault>
+                <input class="form-control" @bind="inviteCode" @bind:event="oninput" placeholder="@L["Invite code"]" autocomplete="off" disabled="@busy" />
+                <button type="submit" class="btn btn-primary" disabled="@(busy || string.IsNullOrWhiteSpace(inviteCode))">@L["Connect"]</button>
+            </form>
+        </section>
+    }
+    else
+    {
+        @if (status.PropertyId is null || chooseProperty)
+        {
+            <section class="inventory-card">
+                <h2>@L["Choose property"]</h2>
+                @if (properties is null)
+                {
+                    <p><em>@L["Loading..."]</em></p>
+                }
+                else if (properties.Count == 0)
+                {
+                    <p class="drawer-hint">@L["No property found in Beds24. Create the property in Beds24 first."]</p>
+                }
+                else
+                {
+                    <p class="drawer-hint">@L["Which Beds24 property is this hotel?"]</p>
+                    <div class="beds24-properties">
+                        @foreach (var property in properties)
+                        {
+                            <button type="button" class="btn btn-outline-primary" disabled="@busy" @onclick="() => SelectPropertyAsync(property.Id)">
+                                @property.Name <span class="drawer-hint">@L["{0} room types", property.RoomTypeCount]</span>
+                            </button>
+                        }
+                    </div>
+                }
+            </section>
+        }
+
+        @if (status.PropertyId is not null)
+        {
+            <section class="inventory-card">
+                <h2>@L["Sync"]</h2>
+                <dl class="beds24-status">
+                    <dt>@L["Property"]</dt>
+                    <dd>
+                        @status.PropertyName (#@status.PropertyId)
+                        <button type="button" class="btn btn-link btn-sm" disabled="@busy" @onclick="ShowPropertiesAsync">@L["Change"]</button>
+                    </dd>
+                    <dt>@L["Automatic sync"]</dt>
+                    <dd>
+                        <label class="beds24-toggle">
+                            <input type="checkbox" class="form-check-input" checked="@status.IsEnabled" disabled="@busy" @onchange="ToggleEnabledAsync" />
+                            @(status.IsEnabled ? L["On"] : L["Off"])
+                        </label>
+                    </dd>
+                    <dt>@L["Last sync"]</dt>
+                    <dd>
+                        @if (status.LastAttemptAtUtc is { } attempt)
+                        {
+                            @FormatTime(attempt)
+                            @if (status.LastError is null)
+                            {
+                                <span class="drawer-hint"> · @L["{0} new, {1} changed, {2} cancelled", status.LastCreated, status.LastUpdated, status.LastCancelled]</span>
+                            }
+                        }
+                        else
+                        {
+                            @L["Not yet synced"]
+                        }
+                    </dd>
+                </dl>
+
+                @if (status.LastError is not null)
+                {
+                    <div class="alert alert-danger" role="alert">@status.LastError</div>
+                }
+
+                @if (status.Problems.Count > 0)
+                {
+                    <div class="alert alert-warning" role="alert">
+                        <strong>@L["These bookings could not be imported:"]</strong>
+                        <ul class="beds24-problems">
+                            @foreach (var problem in status.Problems)
+                            {
+                                <li>@problem</li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <div class="profile-actions">
+                    <button type="button" class="btn btn-primary" disabled="@(busy || mappingsChanged)" @onclick="SyncNowAsync">
+                        @(syncing ? L["Syncing..."] : L["Sync now"])
+                    </button>
+                    @if (mappingsChanged)
+                    {
+                        <span class="drawer-hint">@L["Save the room types first."]</span>
+                    }
+                </div>
+            </section>
+
+            <section class="inventory-card">
+                <h2>@L["Room types"]</h2>
+                <p class="drawer-hint">@L["Assign each Beds24 room type to a room category. New bookings get a free room of that category; a room whose number equals the Beds24 unit name is preferred."]</p>
+                @if (mappings.Count == 0)
+                {
+                    <p class="drawer-hint">@L["The property has no room types."]</p>
+                }
+                else
+                {
+                    <table class="inventory-table">
+                        <thead>
+                            <tr>
+                                <th>@L["Beds24 room type"]</th>
+                                <th>@L["Room category"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var mapping in mappings)
+                            {
+                                <tr class="inventory-row">
+                                    <td>@mapping.Name <span class="drawer-hint">#@mapping.RoomId</span></td>
+                                    <td>
+                                        <select class="form-select form-select-sm" value="@(mapping.Category ?? string.Empty)" disabled="@busy"
+                                                @onchange="args => SetCategory(mapping, args.Value as string)">
+                                            <option value="">@L["- not imported -"]</option>
+                                            @foreach (var category in status.Categories)
+                                            {
+                                                <option value="@category">@category</option>
+                                            }
+                                        </select>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                <div class="profile-actions">
+                    <button type="button" class="btn btn-primary" disabled="@(busy || !mappingsChanged)" @onclick="SaveMappingsAsync">@L["Save"]</button>
+                    <button type="button" class="btn btn-outline-secondary" disabled="@busy" @onclick="ReloadRoomTypesAsync">@L["Reload room types from Beds24"]</button>
+                </div>
+            </section>
+
+            <section class="inventory-card">
+                <h2>@L["Instant updates (optional)"]</h2>
+                <p class="drawer-hint">@L["Without webhook, changes arrive within 10 minutes. For instant updates enter this URL in Beds24 under Settings → Properties → Access → Booking Webhook (Version 2)."]</p>
+                <input class="form-control beds24-webhook" readonly value="@WebhookUrl" />
+            </section>
+        }
+
+        <section class="inventory-card danger-zone">
+            <h3>@L["Disconnect"]</h3>
+            <p>@L["Stops the import and deletes the stored access. Imported reservations stay in HotelManager."]</p>
+            <div class="danger-actions">
+                @if (confirmDisconnect)
+                {
+                    <button type="button" class="btn btn-danger" disabled="@busy" @onclick="DisconnectAsync">@L["Really disconnect"]</button>
+                    <button type="button" class="btn btn-outline-secondary" @onclick="() => confirmDisconnect = false">@L["Cancel"]</button>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-outline-danger" disabled="@busy" @onclick="() => confirmDisconnect = true">@L["Disconnect"]</button>
+                }
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    private Beds24Status? status;
+    private IReadOnlyList<Beds24PropertyOption>? properties;
+    private List<MappingRow> mappings = [];
+    private TimeZoneInfo timeZone = TimeZoneInfo.Utc;
+    private string? inviteCode;
+    private string? message;
+    private string? error;
+    private bool loaded;
+    private bool busy;
+    private bool syncing;
+    private bool chooseProperty;
+    private bool confirmDisconnect;
+
+    private bool mappingsChanged => mappings.Any(mapping => mapping.Category != mapping.SavedCategory);
+
+    private string WebhookUrl => status is null ? string.Empty : $"{Navigation.BaseUri}api/integrations/beds24/webhook/{status.WebhookKey}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var profile = await HotelProfiles.GetCurrentAsync();
+            timeZone = TimeZoneInfo.TryFindSystemTimeZoneById(profile.TimeZone, out var zone) ? zone : TimeZoneInfo.Utc;
+        }
+        catch (HotelValidationException)
+        {
+        }
+
+        await RunAsync(LoadAsync);
+        loaded = true;
+    }
+
+    private async Task LoadAsync()
+    {
+        status = await Beds24.GetStatusAsync();
+        if (status is null)
+        {
+            mappings = [];
+            return;
+        }
+
+        mappings = (await Beds24.GetRoomMappingsAsync())
+            .Select(mapping => new MappingRow(mapping.Beds24RoomId, mapping.Beds24RoomName, mapping.CategoryName))
+            .ToList();
+        if (status.PropertyId is null)
+        {
+            properties ??= await Beds24.GetPropertiesAsync();
+        }
+    }
+
+    private Task ConnectAsync() => RunAsync(async () =>
+    {
+        status = await Beds24.ConnectAsync(inviteCode ?? string.Empty);
+        inviteCode = null;
+        properties = null;
+        await LoadAsync();
+        message = status?.PropertyId is null ? L["Connected. Choose the property."] : L["Connected. Check the room types and start the first sync."];
+    });
+
+    private Task ShowPropertiesAsync() => RunAsync(async () =>
+    {
+        properties = await Beds24.GetPropertiesAsync();
+        chooseProperty = true;
+    });
+
+    private Task SelectPropertyAsync(int propertyId) => RunAsync(async () =>
+    {
+        await Beds24.SelectPropertyAsync(propertyId);
+        chooseProperty = false;
+        await LoadAsync();
+        message = L["Property linked. Check the room types and start the first sync."];
+    });
+
+    private Task ToggleEnabledAsync(ChangeEventArgs args) => RunAsync(async () =>
+    {
+        await Beds24.SetEnabledAsync(args.Value is true);
+        await LoadAsync();
+    });
+
+    private void SetCategory(MappingRow mapping, string? category) =>
+        mapping.Category = string.IsNullOrEmpty(category) ? null : category;
+
+    private Task SaveMappingsAsync() => RunAsync(async () =>
+    {
+        await Beds24.SaveRoomMappingsAsync(mappings.ToDictionary(mapping => mapping.RoomId, mapping => mapping.Category));
+        await LoadAsync();
+        message = L["Room types saved. The next sync reads all upcoming bookings again."];
+    });
+
+    private Task ReloadRoomTypesAsync() => RunAsync(async () =>
+    {
+        await Beds24.SelectPropertyAsync(status!.PropertyId!.Value);
+        await LoadAsync();
+    });
+
+    private Task SyncNowAsync() => RunAsync(async () =>
+    {
+        syncing = true;
+        try
+        {
+            var result = await Beds24.SyncNowAsync();
+            message = result.Problems.Count == 0
+                ? L["Sync finished: {0} new, {1} changed, {2} cancelled.", result.Created, result.Updated, result.Cancelled]
+                : L["Sync finished with {3} problems: {0} new, {1} changed, {2} cancelled.", result.Created, result.Updated, result.Cancelled, result.Problems.Count];
+        }
+        finally
+        {
+            syncing = false;
+            await LoadAsync();
+        }
+    });
+
+    private Task DisconnectAsync() => RunAsync(async () =>
+    {
+        await Beds24.DisconnectAsync();
+        confirmDisconnect = false;
+        chooseProperty = false;
+        properties = null;
+        await LoadAsync();
+        message = L["Beds24 was disconnected."];
+    });
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        busy = true;
+        error = null;
+        message = null;
+        try
+        {
+            await action();
+        }
+        catch (Beds24IntegrationException exception)
+        {
+            error = exception.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private string FormatTime(DateTimeOffset value) =>
+        TimeZoneInfo.ConvertTime(value, timeZone).ToString("g", System.Globalization.CultureInfo.CurrentCulture);
+
+    private sealed class MappingRow(int roomId, string name, string? category)
+    {
+        public int RoomId { get; } = roomId;
+
+        public string Name { get; } = name;
+
+        public string? SavedCategory { get; } = category;
+
+        public string? Category { get; set; } = category;
+    }
+}

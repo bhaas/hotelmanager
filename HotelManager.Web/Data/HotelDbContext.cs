@@ -59,6 +59,10 @@ public sealed class HotelDbContext(DbContextOptions<HotelDbContext> options, ITe
 
     public DbSet<InvoiceSequence> InvoiceSequences => Set<InvoiceSequence>();
 
+    public DbSet<Beds24Connection> Beds24Connections => Set<Beds24Connection>();
+
+    public DbSet<Beds24RoomMapping> Beds24RoomMappings => Set<Beds24RoomMapping>();
+
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
         ApplyTenantRules();
@@ -339,6 +343,24 @@ public sealed class HotelDbContext(DbContextOptions<HotelDbContext> options, ITe
             table.HasCheckConstraint("CK_InvoiceSequences_YearRange", "\"Year\" >= 2000");
             table.HasCheckConstraint("CK_InvoiceSequences_LastNumberNonNegative", "\"LastNumber\" >= 0");
         });
+
+        var beds24Builder = modelBuilder.Entity<Beds24Connection>();
+        beds24Builder.HasKey(connection => connection.HotelId);
+        beds24Builder.Property(connection => connection.ProtectedRefreshToken).IsRequired().HasMaxLength(2000);
+        beds24Builder.Property(connection => connection.PropertyName).HasMaxLength(200);
+        beds24Builder.Property(connection => connection.WebhookKey).IsRequired().HasMaxLength(64);
+        beds24Builder.Property(connection => connection.LastError).HasMaxLength(1000);
+        beds24Builder.Property(connection => connection.LastProblems).HasMaxLength(4000);
+        beds24Builder.HasIndex(connection => connection.WebhookKey).IsUnique();
+        beds24Builder.HasOne<Hotel>()
+            .WithOne()
+            .HasForeignKey<Beds24Connection>(connection => connection.HotelId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        var beds24RoomBuilder = modelBuilder.Entity<Beds24RoomMapping>();
+        beds24RoomBuilder.HasKey(mapping => new { mapping.HotelId, mapping.Beds24RoomId });
+        beds24RoomBuilder.Property(mapping => mapping.Beds24RoomName).IsRequired().HasMaxLength(200);
+        beds24RoomBuilder.Property(mapping => mapping.CategoryName).HasMaxLength(40);
 
         foreach (var entityType in modelBuilder.Model.GetEntityTypes()
                      .Where(type => typeof(ITenantEntity).IsAssignableFrom(type.ClrType))

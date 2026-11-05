@@ -4,6 +4,7 @@ using HotelManager.Web.Features.Billing;
 using HotelManager.Web.Features.Guests;
 using HotelManager.Web.Features.Hotels;
 using HotelManager.Web.Features.Imports;
+using HotelManager.Web.Features.Integrations.Beds24;
 using HotelManager.Web.Features.RoomPlanner;
 using HotelManager.Web.Features.Rooms;
 using HotelManager.Web.Features.Users;
@@ -47,6 +48,13 @@ public static class HotelManagerServiceCollectionExtensions
         services.AddScoped<IPlatformHotelService, PlatformHotelService>();
         services.AddScoped<IGuestService, GuestService>();
         services.AddScoped<IBookingComImportService, BookingComImportService>();
+        services.AddSingleton<Beds24Coordinator>();
+        services.AddHttpClient<IBeds24Client, Beds24Client>(client =>
+        {
+            client.BaseAddress = new Uri(Beds24Client.BaseAddress);
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+        services.AddScoped<IBeds24SyncService, Beds24SyncService>();
         services.AddSingleton<IInvoicePdfService, InvoicePdfService>();
         return services;
     }

@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+    <data name="Beds24 channel manager" xml:space="preserve">
+    <value>Beds24 Channel-Manager</value>
+  </data>
+  <data name="Bookings from Beds24 (Booking.com, Airbnb, Expedia ...) are imported automatically into the room planner every 10 minutes." xml:space="preserve">
+    <value>Buchungen aus Beds24 (Booking.com, Airbnb, Expedia ...) werden alle 10 Minuten automatisch in den Zimmerplan übernommen.</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="Loading..." xml:space="preserve">
+    <value>Wird geladen...</value>
+  </data>
+  <data name="Connect Beds24" xml:space="preserve">
+    <value>Beds24 verbinden</value>
+  </data>
+  <data name="In Beds24 open Settings → Apps &amp; Integrations → API." xml:space="preserve">
+    <value>Öffnen Sie in Beds24 Einstellungen → Apps &amp; Integrationen → API.</value>
+  </data>
+  <data name="Generate an invite code with the scopes &quot;bookings&quot;, &quot;bookings-personal&quot; (read) and &quot;properties&quot; (read)." xml:space="preserve">
+    <value>Erzeugen Sie einen Einladungscode (Invite Code) mit den Berechtigungen "bookings", "bookings-personal" (Lesen) und "properties" (Lesen).</value>
+  </data>
+  <data name="Paste the invite code here. It can only be used once and expires after a few minutes." xml:space="preserve">
+    <value>Fügen Sie den Einladungscode hier ein. Er ist nur einmal verwendbar und läuft nach wenigen Minuten ab.</value>
+  </data>
+  <data name="Invite code" xml:space="preserve">
+    <value>Einladungscode</value>
+  </data>
+  <data name="Connect" xml:space="preserve">
+    <value>Verbinden</value>
+  </data>
+  <data name="Choose property" xml:space="preserve">
+    <value>Unterkunft wählen</value>
+  </data>
+  <data name="No property found in Beds24. Create the property in Beds24 first." xml:space="preserve">
+    <value>In Beds24 wurde keine Unterkunft gefunden. Legen Sie die Unterkunft zuerst in Beds24 an.</value>
+  </data>
+  <data name="Which Beds24 property is this hotel?" xml:space="preserve">
+    <value>Welche Beds24-Unterkunft ist dieses Hotel?</value>
+  </data>
+  <data name="{0} room types" xml:space="preserve">
+    <value>{0} Zimmertypen</value>
+  </data>
+  <data name="Sync" xml:space="preserve">
+    <value>Synchronisierung</value>
+  </data>
+  <data name="Property" xml:space="preserve">
+    <value>Unterkunft</value>
+  </data>
+  <data name="Change" xml:space="preserve">
+    <value>Ändern</value>
+  </data>
+  <data name="Automatic sync" xml:space="preserve">
+    <value>Automatische Synchronisierung</value>
+  </data>
+  <data name="On" xml:space="preserve">
+    <value>Ein</value>
+  </data>
+  <data name="Off" xml:space="preserve">
+    <value>Aus</value>
+  </data>
+  <data name="Last sync" xml:space="preserve">
+    <value>Letzte Synchronisierung</value>
+  </data>
+  <data name="{0} new, {1} changed, {2} cancelled" xml:space="preserve">
+    <value>{0} neu, {1} geändert, {2} storniert</value>
+  </data>
+  <data name="Not yet synced" xml:space="preserve">
+    <value>Noch nicht synchronisiert</value>
+  </data>
+  <data name="These bookings could not be imported:" xml:space="preserve">
+    <value>Diese Buchungen konnten nicht übernommen werden:</value>
+  </data>
+  <data name="Syncing..." xml:space="preserve">
+    <value>Synchronisiere...</value>
+  </data>
+  <data name="Sync now" xml:space="preserve">
+    <value>Jetzt synchronisieren</value>
+  </data>
+  <data name="Save the room types first." xml:space="preserve">
+    <value>Speichern Sie zuerst die Zimmertypen.</value>
+  </data>
+  <data name="Room types" xml:space="preserve">
+    <value>Zimmertypen</value>
+  </data>
+  <data name="Assign each Beds24 room type to a room category. New bookings get a free room of that category; a room whose number equals the Beds24 unit name is preferred." xml:space="preserve">
+    <value>Ordnen Sie jedem Beds24-Zimmertyp eine Zimmerkategorie zu. Neue Buchungen erhalten ein freies Zimmer dieser Kategorie; ein Zimmer, dessen Nummer dem Beds24-Einheitennamen entspricht, wird bevorzugt.</value>
+  </data>
+  <data name="The property has no room types." xml:space="preserve">
+    <value>Die Unterkunft hat keine Zimmertypen.</value>
+  </data>
+  <data name="Beds24 room type" xml:space="preserve">
+    <value>Beds24-Zimmertyp</value>
+  </data>
+  <data name="Room category" xml:space="preserve">
+    <value>Zimmerkategorie</value>
+  </data>
+  <data name="- not imported -" xml:space="preserve">
+    <value>- nicht übernehmen -</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Speichern</value>
+  </data>
+  <data name="Reload room types from Beds24" xml:space="preserve">
+    <value>Zimmertypen neu aus Beds24 laden</value>
+  </data>
+  <data name="Instant updates (optional)" xml:space="preserve">
+    <value>Sofortige Aktualisierung (optional)</value>
+  </data>
+  <data name="Without webhook, changes arrive within 10 minutes. For instant updates enter this URL in Beds24 under Settings → Properties → Access → Booking Webhook (Version 2)." xml:space="preserve">
+    <value>Ohne Webhook kommen Änderungen innerhalb von 10 Minuten an. Für sofortige Aktualisierung tragen Sie diese URL in Beds24 unter Einstellungen → Unterkünfte → Zugang → Buchungs-Webhook (Version 2) ein.</value>
+  </data>
+  <data name="Disconnect" xml:space="preserve">
+    <value>Verbindung trennen</value>
+  </data>
+  <data name="Stops the import and deletes the stored access. Imported reservations stay in HotelManager." xml:space="preserve">
+    <value>Beendet den Import und löscht den gespeicherten Zugang. Bereits übernommene Reservierungen bleiben im HotelManager.</value>
+  </data>
+  <data name="Really disconnect" xml:space="preserve">
+    <value>Wirklich trennen</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="Connected. Choose the property." xml:space="preserve">
+    <value>Verbunden. Wählen Sie die Unterkunft.</value>
+  </data>
+  <data name="Connected. Check the room types and start the first sync." xml:space="preserve">
+    <value>Verbunden. Prüfen Sie die Zimmertypen und starten Sie die erste Synchronisierung.</value>
+  </data>
+  <data name="Property linked. Check the room types and start the first sync." xml:space="preserve">
+    <value>Unterkunft verknüpft. Prüfen Sie die Zimmertypen und starten Sie die erste Synchronisierung.</value>
+  </data>
+  <data name="Room types saved. The next sync reads all upcoming bookings again." xml:space="preserve">
+    <value>Zimmertypen gespeichert. Die nächste Synchronisierung liest alle kommenden Buchungen neu ein.</value>
+  </data>
+  <data name="Sync finished: {0} new, {1} changed, {2} cancelled." xml:space="preserve">
+    <value>Synchronisierung abgeschlossen: {0} neu, {1} geändert, {2} storniert.</value>
+  </data>
+  <data name="Sync finished with {3} problems: {0} new, {1} changed, {2} cancelled." xml:space="preserve">
+    <value>Synchronisierung mit {3} Problemen abgeschlossen: {0} neu, {1} geändert, {2} storniert.</value>
+  </data>
+  <data name="Beds24 was disconnected." xml:space="preserve">
+    <value>Die Verbindung zu Beds24 wurde getrennt.</value>
+  </data>
+</root>

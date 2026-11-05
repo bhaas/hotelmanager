@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -50,5 +50,8 @@
   </data>
   <data name="Hotel administration" xml:space="preserve">
     <value>Hotelverwaltung</value>
+  </data>
+  <data name="Beds24 channel manager" xml:space="preserve">
+    <value>Beds24 Channel-Manager</value>
   </data>
 </root>

@@ -99,6 +99,87 @@ namespace HotelManager.Web.Data.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("HotelManager.Web.Domain.Beds24Connection", b =>
+                {
+                    b.Property<Guid>("HotelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ConnectedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("LastAttemptAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("LastCancelled")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LastCreated")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("LastProblems")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTimeOffset?>("LastSyncAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("LastUpdated")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("PropertyId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PropertyName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("ProtectedRefreshToken")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("WebhookKey")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("HotelId");
+
+                    b.HasIndex("WebhookKey")
+                        .IsUnique();
+
+                    b.ToTable("Beds24Connections");
+                });
+
+            modelBuilder.Entity("HotelManager.Web.Domain.Beds24RoomMapping", b =>
+                {
+                    b.Property<Guid>("HotelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Beds24RoomId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Beds24RoomName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("CategoryName")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.HasKey("HotelId", "Beds24RoomId");
+
+                    b.ToTable("Beds24RoomMappings");
+                });
+
             modelBuilder.Entity("HotelManager.Web.Domain.Billing.FolioEntry", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1036,6 +1117,24 @@ namespace HotelManager.Web.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Hotel");
+                });
+
+            modelBuilder.Entity("HotelManager.Web.Domain.Beds24Connection", b =>
+                {
+                    b.HasOne("HotelManager.Web.Domain.Hotel", null)
+                        .WithOne()
+                        .HasForeignKey("HotelManager.Web.Domain.Beds24Connection", "HotelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("HotelManager.Web.Domain.Beds24RoomMapping", b =>
+                {
+                    b.HasOne("HotelManager.Web.Domain.Hotel", null)
+                        .WithMany()
+                        .HasForeignKey("HotelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("HotelManager.Web.Domain.Billing.FolioEntry", b =>

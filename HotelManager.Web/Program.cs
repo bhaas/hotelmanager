@@ -2,6 +2,7 @@ using HotelManager.Web.Components;
 using HotelManager.Web.Data;
 using HotelManager.Web.Features.Billing;
 using HotelManager.Web.Features.Guests;
+using HotelManager.Web.Features.Integrations.Beds24;
 using HotelManager.Web.Features.RoomPlanner;
 using HotelManager.Web.Features.Rooms;
 using HotelManager.Web.Infrastructure;
@@ -62,6 +63,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 builder.Services.AddHotelManagerCore(connectionString);
 builder.Services.AddHotelManagerIdentity();
+builder.Services.AddHostedService<Beds24SyncWorker>();
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<HotelDbContext>("postgres");
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -183,6 +185,7 @@ app.MapRoomPlannerApi();
 app.MapRoomInventoryApi();
 app.MapBillingApi();
 app.MapGuestApi();
+app.MapBeds24Webhook();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
