@@ -5,19 +5,19 @@
 @inject NavigationManager Navigation
 @inject IStringLocalizer<HotelSettings> L
 
-<PageTitle>@L["Hotel profile"]</PageTitle>
+<PageTitle>@L["Hotel administration"]</PageTitle>
 
 <div class="settings-page">
     <header class="settings-header">
         <div>
-            <h1>@L["Hotel profile"]</h1>
-            <p class="settings-subtitle">@L["Name, address and tax data of this hotel. They appear on new invoices."]</p>
+            <h1>@L["Hotel administration"]</h1>
+            <p class="settings-subtitle">@L["Name, address, tax data and operating parameters of this hotel."]</p>
         </div>
     </header>
 
     @if (saved)
     {
-        <div class="alert alert-success" role="status">@L["The hotel profile was saved."]</div>
+        <div class="alert alert-success" role="status">@L["The hotel settings were saved."]</div>
     }
 
     @if (error is not null)
@@ -100,8 +100,48 @@
                 <p class="drawer-hint">@L["Changes apply to new invoices only; issued invoices keep their original data."]</p>
             </section>
 
+            <section class="inventory-card">
+                <h2>@L["Invoices & payments"]</h2>
+                <div class="form-grid">
+                    <label>
+                        <span>@L["Invoice number prefix"] *</span>
+                        <input class="form-control" @bind="invoicePrefix" @bind:event="oninput" maxlength="10" required />
+                        <small class="drawer-hint">@L["Next number e.g. {0}", $"{invoicePrefix?.Trim().ToUpperInvariant()}-{DateTime.UtcNow.Year}-000001"]</small>
+                    </label>
+                    <label>
+                        <span>@L["Payment terms (days)"]</span>
+                        <input class="form-control" type="number" min="0" max="365" @bind="paymentTermDays" />
+                    </label>
+                    <label class="span-2">
+                        <span>@L["Cash payment limit ({0})", profile.Currency]</span>
+                        <input class="form-control" type="number" min="0" step="0.01" @bind="cashPaymentLimit" />
+                        <small class="drawer-hint">@L["Single cash payments above this amount are rejected (anti-money-laundering rule)."]</small>
+                    </label>
+                    <label class="span-2">
+                        <span>@L["Invoice footer"]</span>
+                        <textarea class="form-control" rows="3" @bind="invoiceFooter" maxlength="500"
+                                  placeholder="@L["e.g. Bank: Musterbank · IBAN AT00 0000 0000 0000 0000 · BIC MUSTATWW"]"></textarea>
+                        <small class="drawer-hint">@L["Printed at the bottom of every new invoice, e.g. bank details or payment notes."]</small>
+                    </label>
+                </div>
+            </section>
+
+            <section class="inventory-card">
+                <h2>@L["Arrival & departure"]</h2>
+                <div class="form-grid">
+                    <label>
+                        <span>@L["Check-in from"]</span>
+                        <input class="form-control" type="time" @bind="checkInTime" />
+                    </label>
+                    <label>
+                        <span>@L["Check-out until"]</span>
+                        <input class="form-control" type="time" @bind="checkOutTime" />
+                    </label>
+                </div>
+            </section>
+
             <div class="profile-actions">
-                <button type="submit" class="btn btn-primary" disabled="@(busy || string.IsNullOrWhiteSpace(name))">@L["Save"]</button>
+                <button type="submit" class="btn btn-primary" disabled="@(busy || string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(invoicePrefix))">@L["Save"]</button>
             </div>
         </form>
     }
@@ -125,6 +165,12 @@
     private string? email;
     private string? vatId;
     private string timeZone = "Europe/Vienna";
+    private string? invoicePrefix;
+    private int paymentTermDays;
+    private decimal cashPaymentLimit;
+    private string? invoiceFooter;
+    private TimeOnly checkInTime;
+    private TimeOnly checkOutTime;
 
     private IEnumerable<string> TimeZoneOptions =>
         HotelTimeZones.Common.Contains(timeZone) ? HotelTimeZones.Common : HotelTimeZones.Common.Prepend(timeZone);
@@ -155,6 +201,12 @@
         email = value.Email;
         vatId = value.VatId;
         timeZone = value.TimeZone;
+        invoicePrefix = value.Operations.InvoiceNumberPrefix;
+        paymentTermDays = value.Operations.PaymentTermDays;
+        cashPaymentLimit = value.Operations.CashPaymentLimit;
+        invoiceFooter = value.Operations.InvoiceFooter;
+        checkInTime = value.Operations.CheckInTime;
+        checkOutTime = value.Operations.CheckOutTime;
     }
 
     private async Task SaveAsync()
@@ -171,7 +223,8 @@
         {
             var previousName = profile.Name;
             Apply(await HotelProfiles.UpdateCurrentAsync(new HotelProfileUpdate(
-                name, legalName, street, postalCode, city, country, phone, email, vatId, timeZone)));
+                name, legalName, street, postalCode, city, country, phone, email, vatId, timeZone,
+                new HotelOperatingSettings(invoicePrefix ?? string.Empty, paymentTermDays, cashPaymentLimit, checkInTime, checkOutTime, invoiceFooter))));
 
             if (!string.Equals(previousName, profile.Name, StringComparison.Ordinal))
             {

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -71,5 +71,50 @@
   </data>
   <data name="Save" xml:space="preserve">
     <value>Speichern</value>
+  </data>
+  <data name="Hotel administration" xml:space="preserve">
+    <value>Hotelverwaltung</value>
+  </data>
+  <data name="Name, address, tax data and operating parameters of this hotel." xml:space="preserve">
+    <value>Name, Adresse, Steuerdaten und Betriebsparameter dieses Hotels.</value>
+  </data>
+  <data name="The hotel settings were saved." xml:space="preserve">
+    <value>Die Hoteleinstellungen wurden gespeichert.</value>
+  </data>
+  <data name="Invoices &amp; payments" xml:space="preserve">
+    <value>Rechnungen &amp; Zahlungen</value>
+  </data>
+  <data name="Invoice number prefix" xml:space="preserve">
+    <value>Präfix der Rechnungsnummer</value>
+  </data>
+  <data name="Next number e.g. {0}" xml:space="preserve">
+    <value>Nächste Nummer z. B. {0}</value>
+  </data>
+  <data name="Payment terms (days)" xml:space="preserve">
+    <value>Zahlungsziel (Tage)</value>
+  </data>
+  <data name="Cash payment limit ({0})" xml:space="preserve">
+    <value>Barzahlungsgrenze ({0})</value>
+  </data>
+  <data name="Single cash payments above this amount are rejected (anti-money-laundering rule)." xml:space="preserve">
+    <value>Einzelne Barzahlungen über diesem Betrag werden abgelehnt (Geldwäschevorschrift).</value>
+  </data>
+  <data name="Invoice footer" xml:space="preserve">
+    <value>Rechnungsfußzeile</value>
+  </data>
+  <data name="e.g. Bank: Musterbank · IBAN AT00 0000 0000 0000 0000 · BIC MUSTATWW" xml:space="preserve">
+    <value>z. B. Bank: Musterbank · IBAN AT00 0000 0000 0000 0000 · BIC MUSTATWW</value>
+  </data>
+  <data name="Printed at the bottom of every new invoice, e.g. bank details or payment notes." xml:space="preserve">
+    <value>Wird am Ende jeder neuen Rechnung gedruckt, z. B. Bankverbindung oder Zahlungshinweise.</value>
+  </data>
+  <data name="Arrival &amp; departure" xml:space="preserve">
+    <value>An- &amp; Abreise</value>
+  </data>
+  <data name="Check-in from" xml:space="preserve">
+    <value>Check-in ab</value>
+  </data>
+  <data name="Check-out until" xml:space="preserve">
+    <value>Check-out bis</value>
   </data>
 </root>

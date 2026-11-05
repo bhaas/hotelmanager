@@ -152,7 +152,15 @@ public sealed class InvoicePdfService : IInvoicePdfService
                     });
                 });
 
-                page.Footer().AlignCenter().Text("Elektronisch erzeugte Rechnung");
+                page.Footer().Column(footer =>
+                {
+                    if (!string.IsNullOrWhiteSpace(invoice.FooterText))
+                    {
+                        footer.Item().AlignCenter().Text(invoice.FooterText).FontSize(8);
+                    }
+
+                    footer.Item().AlignCenter().Text("Elektronisch erzeugte Rechnung").FontSize(8).FontColor(Colors.Grey.Darken1);
+                });
             });
         }).GeneratePdf();
     }

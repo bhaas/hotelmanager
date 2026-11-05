@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -29,5 +29,14 @@
   </data>
   <data name="Select a valid time zone." xml:space="preserve">
     <value>Wählen Sie eine gültige Zeitzone.</value>
+  </data>
+  <data name="Payment terms must be between 0 and 365 days." xml:space="preserve">
+    <value>Das Zahlungsziel muss zwischen 0 und 365 Tagen liegen.</value>
+  </data>
+  <data name="The cash payment limit must be between 0 and 1,000,000." xml:space="preserve">
+    <value>Die Barzahlungsgrenze muss zwischen 0 und 1.000.000 liegen.</value>
+  </data>
+  <data name="The invoice prefix must have 1-10 letters, digits or hyphens." xml:space="preserve">
+    <value>Das Rechnungspräfix muss aus 1-10 Buchstaben, Ziffern oder Bindestrichen bestehen.</value>
   </data>
 </root>

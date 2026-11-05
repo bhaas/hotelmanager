@@ -4,14 +4,12 @@ using HotelManager.Web.Domain;
 using HotelManager.Web.Domain.Billing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
-using Microsoft.Extensions.Options;
 
 namespace HotelManager.Web.Features.Billing;
 
 public sealed class BillingService(
     IDbContextFactory<HotelDbContext> dbContextFactory,
-    IStringLocalizer<BillingService> localizer,
-    IOptions<BillingComplianceOptions> complianceOptions) : IBillingService
+    IStringLocalizer<BillingService> localizer) : IBillingService
 {
     private static readonly decimal[] AllowedVatRates = [0m, 10m, 13m, 20m];
     private const string BillingCurrency = "EUR";
@@ -63,7 +61,19 @@ public sealed class BillingService(
 
         return await ExecuteSerializableAsync(async dbContext =>
         {
-            _ = await GetReservationInternalAsync(dbContext, reservationId, cancellationToken);
+            var reservation = await GetReservationInternalAsync(dbContext, reservationId, cancellationToken);
+            if (request.Method == PaymentMethod.Cash)
+            {
+                var cashLimit = await dbContext.Hotels.AsNoTracking()
+                    .Where(hotel => hotel.Id == reservation.HotelId)
+                    .Select(hotel => hotel.CashPaymentLimit)
+                    .SingleAsync(cancellationToken);
+                if (request.Amount > cashLimit)
+                {
+                    throw new BillingValidationException(localizer["Cash payment exceeds the configured AML limit. Use non-cash settlement or split according to policy."]);
+                }
+            }
+
             var snapshot = await GetFolioSnapshotInternalAsync(dbContext, reservationId, cancellationToken);
 
             if (snapshot.GrossAmount <= 0)
@@ -120,7 +130,7 @@ public sealed class BillingService(
             }
 
             var hotel = await dbContext.Hotels.AsNoTracking().SingleAsync(item => item.Id == reservation.HotelId, cancellationToken);
-            var invoiceNumber = await GetNextInvoiceNumberAsync(dbContext, cancellationToken);
+            var invoiceNumber = await GetNextInvoiceNumberAsync(dbContext, hotel.InvoiceNumberPrefix, cancellationToken);
             var invoice = new InvoiceDocument
             {
                 Id = Guid.NewGuid(),
@@ -137,6 +147,7 @@ public sealed class BillingService(
                 BuyerName = request.BuyerName.Trim(),
                 BuyerAddress = request.BuyerAddress.Trim(),
                 BuyerVatId = NormalizeOptionalText(request.BuyerVatId),
+                FooterText = hotel.InvoiceFooter,
                 NetAmount = RoundCurrency(folioSnapshot.NetAmount),
                 VatAmount = RoundCurrency(folioSnapshot.VatAmount),
                 GrossAmount = RoundCurrency(folioSnapshot.GrossAmount)
@@ -256,7 +267,7 @@ public sealed class BillingService(
                 openAmount)).ToList());
     }
 
-    private async Task<string> GetNextInvoiceNumberAsync(HotelDbContext dbContext, CancellationToken cancellationToken)
+    private async Task<string> GetNextInvoiceNumberAsync(HotelDbContext dbContext, string prefix, CancellationToken cancellationToken)
     {
         var year = DateTime.UtcNow.Year;
         var sequence = await dbContext.Set<InvoiceSequence>()
@@ -273,7 +284,8 @@ public sealed class BillingService(
         }
 
         sequence.LastNumber++;
-        return $"AT-{year}-{sequence.LastNumber:D6}";
+        // The sequence is per hotel and year, so numbers stay unique even when the prefix changes.
+        return $"{prefix}-{year}-{sequence.LastNumber:D6}";
     }
 
     private void ValidateFolioEntryRequest(BillingAddFolioEntryRequest request)
@@ -314,11 +326,6 @@ public sealed class BillingService(
         if (request.Amount <= 0)
         {
             throw new BillingValidationException(localizer["Payment amount must be greater than 0."]);
-        }
-
-        if (request.Method == PaymentMethod.Cash && request.Amount > complianceOptions.Value.CashPaymentLimitEur)
-        {
-            throw new BillingValidationException(localizer["Cash payment exceeds the configured AML limit. Use non-cash settlement or split according to policy."]);
         }
 
         if (request.Reference is not null && request.Reference.Trim().Length > 80)
@@ -379,6 +386,7 @@ public sealed class BillingService(
             invoice.NetAmount,
             invoice.VatAmount,
             invoice.GrossAmount,
+            invoice.FooterText,
             invoice.Lines
                 .OrderBy(line => line.Description)
                 .Select(line => new BillingInvoiceLineDto(

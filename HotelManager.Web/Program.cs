@@ -43,7 +43,6 @@ var useHttpsRedirection = builder.Configuration.GetValue("Http:UseHttpsRedirecti
 var supportedCultureNames = new[] { "en", "de" };
 
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
-builder.Services.Configure<BillingComplianceOptions>(builder.Configuration.GetSection(BillingComplianceOptions.SectionName));
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {
     var supportedCultures = supportedCultureNames

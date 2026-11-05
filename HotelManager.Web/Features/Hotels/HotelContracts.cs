@@ -12,7 +12,20 @@ public sealed record HotelProfile(
     string? Email,
     string? VatId,
     string TimeZone,
-    string Currency);
+    string Currency,
+    HotelOperatingSettings Operations);
+
+/// <summary>Hotel-specific operating and invoicing parameters.</summary>
+public sealed record HotelOperatingSettings(
+    string InvoiceNumberPrefix,
+    int PaymentTermDays,
+    decimal CashPaymentLimit,
+    TimeOnly CheckInTime,
+    TimeOnly CheckOutTime,
+    string? InvoiceFooter)
+{
+    public static HotelOperatingSettings Default { get; } = new("AT", 14, 10_000m, new TimeOnly(15, 0), new TimeOnly(11, 0), null);
+}
 
 public sealed record HotelProfileUpdate(
     string Name,
@@ -24,7 +37,8 @@ public sealed record HotelProfileUpdate(
     string? Phone,
     string? Email,
     string? VatId,
-    string TimeZone);
+    string TimeZone,
+    HotelOperatingSettings? Operations = null);
 
 public sealed record PlatformHotelSummary(
     Guid Id,

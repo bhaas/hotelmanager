@@ -7,6 +7,7 @@
 @inject IRateAvailabilityService RateAvailabilityService
 @inject IBillingService BillingService
 @inject IGuestService GuestProfiles
+@inject IHotelProfileService HotelProfiles
 @inject IStringLocalizer<RoomPlanner> L
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
@@ -451,11 +452,11 @@
                     </div>
                 </div>
                 <div>
-                    <label class="form-label" for="editor-checkin">@L["Check-in"]</label>
+                    <label class="form-label" for="editor-checkin">@L["Check-in"] <small class="text-muted">@L["from {0}", hotelSettings.CheckInTime.ToString("t")]</small></label>
                     <InputDate id="editor-checkin" class="form-control" @bind-Value="editor.CheckIn" disabled="@isExecutingAction" />
                 </div>
                 <div>
-                    <label class="form-label" for="editor-checkout">@L["Check-out"]</label>
+                    <label class="form-label" for="editor-checkout">@L["Check-out"] <small class="text-muted">@L["until {0}", hotelSettings.CheckOutTime.ToString("t")]</small></label>
                     <InputDate id="editor-checkout" class="form-control" @bind-Value="editor.CheckOut" disabled="@isExecutingAction" />
                 </div>
                 <div>
@@ -793,10 +794,23 @@
     private BillingPaymentModel billingPayment = new();
     private BillingInvoiceModel billingInvoice = new();
 
-    protected override Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
-        return ReloadAsync();
+        try
+        {
+            hotelSettings = (await HotelProfiles.GetCurrentAsync()).Operations;
+        }
+        catch (HotelValidationException)
+        {
+            // No hotel selected; the planner shows its own message.
+        }
+
+        await ReloadAsync();
     }
+
+    private HotelOperatingSettings hotelSettings = HotelOperatingSettings.Default;
+
+    private DateOnly DefaultDueDate() => DateOnly.FromDateTime(DateTime.UtcNow).AddDays(hotelSettings.PaymentTermDays);
 
     private async Task ShiftWindowAsync(int direction)
     {
@@ -1422,7 +1436,7 @@
             }
         }
 
-        billingInvoice.DueDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(14);
+        billingInvoice.DueDate = DefaultDueDate();
         ClearOperationMessages();
         await RefreshRateQuoteAsync();
         await LoadBillingAsync(reservation.ReservationId);
@@ -1782,7 +1796,7 @@
             Reference = null
         };
 
-        billingInvoice.DueDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(14);
+        billingInvoice.DueDate = DefaultDueDate();
     }
 
     private void ClearOperationMessages()

@@ -34,6 +34,9 @@ public sealed class InvoiceDocument : Domain.ITenantEntity
 
     public string? BuyerVatId { get; set; }
 
+    /// <summary>Hotel invoice footer (e.g. bank details) at the time of issue.</summary>
+    public string? FooterText { get; set; }
+
     public decimal NetAmount { get; set; }
 
     public decimal VatAmount { get; set; }

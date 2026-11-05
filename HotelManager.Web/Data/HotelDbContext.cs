@@ -118,6 +118,9 @@ public sealed class HotelDbContext(DbContextOptions<HotelDbContext> options, ITe
         hotelBuilder.Property(hotel => hotel.Phone).HasMaxLength(40);
         hotelBuilder.Property(hotel => hotel.Email).HasMaxLength(256);
         hotelBuilder.Property(hotel => hotel.VatId).HasMaxLength(24);
+        hotelBuilder.Property(hotel => hotel.InvoiceNumberPrefix).IsRequired().HasMaxLength(10);
+        hotelBuilder.Property(hotel => hotel.CashPaymentLimit).HasPrecision(12, 2);
+        hotelBuilder.Property(hotel => hotel.InvoiceFooter).HasMaxLength(500);
         hotelBuilder.Property(hotel => hotel.IsActive).HasDefaultValue(true);
         hotelBuilder.Ignore(hotel => hotel.InvoiceSellerName);
         hotelBuilder.Ignore(hotel => hotel.InvoiceSellerAddress);
@@ -293,6 +296,7 @@ public sealed class HotelDbContext(DbContextOptions<HotelDbContext> options, ITe
         invoiceBuilder.Property(document => document.BuyerName).IsRequired().HasMaxLength(200);
         invoiceBuilder.Property(document => document.BuyerAddress).IsRequired().HasMaxLength(300);
         invoiceBuilder.Property(document => document.BuyerVatId).HasMaxLength(24);
+        invoiceBuilder.Property(document => document.FooterText).HasMaxLength(500);
         invoiceBuilder.Property(document => document.NetAmount).HasPrecision(12, 2);
         invoiceBuilder.Property(document => document.VatAmount).HasPrecision(12, 2);
         invoiceBuilder.Property(document => document.GrossAmount).HasPrecision(12, 2);

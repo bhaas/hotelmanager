@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using HotelManager.Web.Data;
 using HotelManager.Web.Domain;
+using HotelManager.Web.Features.Billing;
+using HotelManager.Web.Domain.Billing;
 using HotelManager.Web.Features.Hotels;
 using HotelManager.Web.Features.Users;
 using HotelManager.Web.Infrastructure.Identity;
@@ -186,6 +188,52 @@ public sealed class MultiHotelTests(DatabaseFixture fixture)
         }
 
         Assert.False(await signIn.CanSignInAsync((await users.FindByIdAsync(member.Id))!));
+    }
+
+    [Fact]
+    public async Task Hotel_operating_settings_drive_invoice_numbers_footer_and_cash_limit()
+    {
+        var hotel = await fixture.CreateHotelAsync("Settings hotel");
+        var admin = await CreateUserAsync(hotel, "settings-admin", HotelRoles.Admin);
+        await using var scope = CreateSignedInScope(hotel, admin.Id, HotelRoles.Admin);
+        var profiles = scope.ServiceProvider.GetRequiredService<IHotelProfileService>();
+        var current = await profiles.GetCurrentAsync();
+        Assert.Equal(HotelOperatingSettings.Default, current.Operations);
+
+        var settings = new HotelOperatingSettings("wien", 30, 500m, new TimeOnly(14, 0), new TimeOnly(10, 30), "IBAN AT00 1234");
+        var updated = await profiles.UpdateCurrentAsync(new HotelProfileUpdate(
+            "Renamed hotel", null, null, null, null, null, null, null, null, current.TimeZone, settings));
+        Assert.Equal("Renamed hotel", updated.Name);
+        Assert.Equal(settings with { InvoiceNumberPrefix = "WIEN" }, updated.Operations);
+        await Assert.ThrowsAsync<HotelValidationException>(() => profiles.UpdateCurrentAsync(new HotelProfileUpdate(
+            "Renamed hotel", null, null, null, null, null, null, null, null, current.TimeZone, settings with { InvoiceNumberPrefix = "A/B" })));
+
+        var reservationId = Guid.NewGuid();
+        await using (var db = await DatabaseFixture.CreateDbAsync(scope))
+        {
+            var room = new Room { Id = Guid.NewGuid(), Number = "1", Type = "DK" };
+            db.Rooms.Add(room);
+            db.Reservations.Add(new Reservation
+            {
+                Id = reservationId, RoomId = room.Id, GuestName = "Guest", Status = ReservationStatus.Confirmed,
+                CheckIn = new DateOnly(2026, 12, 1), CheckOut = new DateOnly(2026, 12, 3)
+            });
+            await db.SaveChangesAsync();
+        }
+
+        var billing = scope.ServiceProvider.GetRequiredService<IBillingService>();
+        await billing.AddFolioEntryAsync(reservationId, new BillingAddFolioEntryRequest(
+            "Room", FolioEntryType.Charge, 2, 500m, 10m, new DateOnly(2026, 12, 1), null), CancellationToken.None);
+        await Assert.ThrowsAsync<BillingValidationException>(() => billing.RegisterPaymentAsync(
+            reservationId, new BillingRegisterPaymentRequest(501m, PaymentMethod.Cash, null, null, null), CancellationToken.None));
+        await billing.RegisterPaymentAsync(
+            reservationId, new BillingRegisterPaymentRequest(501m, PaymentMethod.Card, null, null, null), CancellationToken.None);
+
+        var invoice = await billing.IssueInvoiceAsync(
+            reservationId, new BillingIssueInvoiceRequest("Guest", "Street 1", null, new DateOnly(2027, 1, 1)), CancellationToken.None);
+        Assert.Matches(@"^WIEN-\d{4}-000001$", invoice.InvoiceNumber);
+        Assert.Equal("IBAN AT00 1234", invoice.FooterText);
+        Assert.Equal("Renamed hotel", invoice.SellerName);
     }
 
     private AsyncServiceScope CreateSignedInScope(Guid hotelId, string userId, params string[] roles)

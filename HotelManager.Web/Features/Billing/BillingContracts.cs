@@ -84,6 +84,7 @@ public sealed record BillingInvoiceDocumentDto(
     decimal NetAmount,
     decimal VatAmount,
     decimal GrossAmount,
+    string? FooterText,
     IReadOnlyList<BillingInvoiceLineDto> Lines);
 
 public sealed record BillingInvoiceLineDto(

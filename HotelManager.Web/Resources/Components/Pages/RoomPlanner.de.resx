@@ -414,4 +414,10 @@
   <data name="Guest profile {0} created." xml:space="preserve">
     <value>Gästeprofil {0} angelegt.</value>
   </data>
+  <data name="from {0}" xml:space="preserve">
+    <value>ab {0}</value>
+  </data>
+  <data name="until {0}" xml:space="preserve">
+    <value>bis {0}</value>
+  </data>
 </root>

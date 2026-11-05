@@ -30,6 +30,22 @@ public sealed class Hotel
 
     public string Currency { get; set; } = "EUR";
 
+    /// <summary>Prefix of invoice numbers, e.g. "AT" → "AT-2026-000001".</summary>
+    public string InvoiceNumberPrefix { get; set; } = "AT";
+
+    /// <summary>Default days until an invoice is due.</summary>
+    public int PaymentTermDays { get; set; } = 14;
+
+    /// <summary>Largest accepted single cash payment (anti-money-laundering rule).</summary>
+    public decimal CashPaymentLimit { get; set; } = 10_000m;
+
+    public TimeOnly CheckInTime { get; set; } = new(15, 0);
+
+    public TimeOnly CheckOutTime { get; set; } = new(11, 0);
+
+    /// <summary>Printed at the bottom of invoices, e.g. bank details (IBAN/BIC) or payment notes.</summary>
+    public string? InvoiceFooter { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public DateTimeOffset CreatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
