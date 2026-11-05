@@ -1,0 +1,186 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="+ New guest" xml:space="preserve">
+    <value>+ Neuer Gast</value>
+  </data>
+  <data name="Anonymized guest" xml:space="preserve">
+    <value>Anonymisierter Gast</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="Cancelled" xml:space="preserve">
+    <value>Storniert</value>
+  </data>
+  <data name="Checked out" xml:space="preserve">
+    <value>Abgereist</value>
+  </data>
+  <data name="City" xml:space="preserve">
+    <value>Ort</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="Company" xml:space="preserve">
+    <value>Firma</value>
+  </data>
+  <data name="Confirmed" xml:space="preserve">
+    <value>Bestätigt</value>
+  </data>
+  <data name="Consents to marketing emails" xml:space="preserve">
+    <value>Willigt in Marketing-E-Mails ein</value>
+  </data>
+  <data name="Contact" xml:space="preserve">
+    <value>Kontakt</value>
+  </data>
+  <data name="Country" xml:space="preserve">
+    <value>Land</value>
+  </data>
+  <data name="Date of birth" xml:space="preserve">
+    <value>Geburtsdatum</value>
+  </data>
+  <data name="Email" xml:space="preserve">
+    <value>E-Mail</value>
+  </data>
+  <data name="Erase personal data" xml:space="preserve">
+    <value>Personenbezogene Daten löschen</value>
+  </data>
+  <data name="Erase the personal data of {0}? This cannot be undone." xml:space="preserve">
+    <value>Personenbezogene Daten von {0} löschen? Dies kann nicht rückgängig gemacht werden.</value>
+  </data>
+  <data name="Export all personal data held about this guest, or erase it. Guests with stays are anonymized; issued invoices are kept for the statutory retention period." xml:space="preserve">
+    <value>Alle zu diesem Gast gespeicherten personenbezogenen Daten exportieren oder löschen. Gäste mit Aufenthalten werden anonymisiert; ausgestellte Rechnungen bleiben für die gesetzliche Aufbewahrungsfrist erhalten.</value>
+  </data>
+  <data name="Export data (JSON)" xml:space="preserve">
+    <value>Daten exportieren (JSON)</value>
+  </data>
+  <data name="First name" xml:space="preserve">
+    <value>Vorname</value>
+  </data>
+  <data name="Guest profiles with contact data, preferences and stay history." xml:space="preserve">
+    <value>Gästeprofile mit Kontaktdaten, Vorlieben und Aufenthaltshistorie.</value>
+  </data>
+  <data name="Guest {0} saved." xml:space="preserve">
+    <value>Gast {0} gespeichert.</value>
+  </data>
+  <data name="Guests" xml:space="preserve">
+    <value>Gäste</value>
+  </data>
+  <data name="In house" xml:space="preserve">
+    <value>Im Haus</value>
+  </data>
+  <data name="Invoice" xml:space="preserve">
+    <value>Rechnung</value>
+  </data>
+  <data name="Invoiced" xml:space="preserve">
+    <value>Berechnet</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Sprache</value>
+  </data>
+  <data name="Last arrival" xml:space="preserve">
+    <value>Letzte Anreise</value>
+  </data>
+  <data name="Last name" xml:space="preserve">
+    <value>Nachname</value>
+  </data>
+  <data name="Loading..." xml:space="preserve">
+    <value>Wird geladen...</value>
+  </data>
+  <data name="Location" xml:space="preserve">
+    <value>Ort</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Nationality" xml:space="preserve">
+    <value>Staatsangehörigkeit</value>
+  </data>
+  <data name="New guest" xml:space="preserve">
+    <value>Neuer Gast</value>
+  </data>
+  <data name="Next arrival" xml:space="preserve">
+    <value>Nächste Anreise</value>
+  </data>
+  <data name="Nights" xml:space="preserve">
+    <value>Nächte</value>
+  </data>
+  <data name="No guest profiles yet." xml:space="preserve">
+    <value>Noch keine Gästeprofile.</value>
+  </data>
+  <data name="No guests match your search." xml:space="preserve">
+    <value>Keine Gäste gefunden.</value>
+  </data>
+  <data name="No reservations linked yet." xml:space="preserve">
+    <value>Noch keine Reservierungen verknüpft.</value>
+  </data>
+  <data name="Notes &amp; preferences" xml:space="preserve">
+    <value>Notizen &amp; Vorlieben</value>
+  </data>
+  <data name="Personal data was erased on {0}. Only the stay history is kept." xml:space="preserve">
+    <value>Personenbezogene Daten wurden am {0} gelöscht. Nur die Aufenthaltshistorie bleibt erhalten.</value>
+  </data>
+  <data name="Phone" xml:space="preserve">
+    <value>Telefon</value>
+  </data>
+  <data name="Postal code" xml:space="preserve">
+    <value>PLZ</value>
+  </data>
+  <data name="Privacy (GDPR)" xml:space="preserve">
+    <value>Datenschutz (DSGVO)</value>
+  </data>
+  <data name="Room" xml:space="preserve">
+    <value>Zimmer</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Speichern</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>Suchen</value>
+  </data>
+  <data name="Search name, company, email, phone..." xml:space="preserve">
+    <value>Name, Firma, E-Mail, Telefon suchen...</value>
+  </data>
+  <data name="Showing the first {0} guests. Refine the search to find others." xml:space="preserve">
+    <value>Die ersten {0} Gäste werden angezeigt. Verfeinern Sie die Suche, um weitere zu finden.</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Stay" xml:space="preserve">
+    <value>Aufenthalt</value>
+  </data>
+  <data name="Stay history" xml:space="preserve">
+    <value>Aufenthaltshistorie</value>
+  </data>
+  <data name="Stays" xml:space="preserve">
+    <value>Aufenthalte</value>
+  </data>
+  <data name="Street" xml:space="preserve">
+    <value>Straße</value>
+  </data>
+  <data name="The guest profile was deleted." xml:space="preserve">
+    <value>Das Gästeprofil wurde gelöscht.</value>
+  </data>
+  <data name="The guest was anonymized. Stay history and invoices are kept." xml:space="preserve">
+    <value>Der Gast wurde anonymisiert. Aufenthaltshistorie und Rechnungen bleiben erhalten.</value>
+  </data>
+  <data name="VAT ID (for company invoices)" xml:space="preserve">
+    <value>USt-IdNr. (für Firmenrechnungen)</value>
+  </data>
+  <data name="VIP" xml:space="preserve">
+    <value>VIP</value>
+  </data>
+</root>

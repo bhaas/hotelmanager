@@ -28,7 +28,10 @@ public sealed record RoomPlannerReservation(
     DateOnly CheckOut,
     int Occupancy,
     ReservationStatus Status,
-    string? Notes);
+    string? Notes,
+    Guid? GuestId = null,
+    ReservationSource Source = ReservationSource.Direct,
+    string? ExternalReference = null);
 
 public sealed record RoomPlannerReservationUpsertRequest(
     Guid RoomId,
@@ -37,7 +40,8 @@ public sealed record RoomPlannerReservationUpsertRequest(
     DateOnly CheckOut,
     int Occupancy,
     ReservationStatus Status,
-    string? Notes);
+    string? Notes,
+    Guid? GuestId = null);
 
 public sealed record RoomRateAvailabilitySnapshot(
     IReadOnlyList<RoomRateRuleDto> RateRules,

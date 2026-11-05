@@ -1,6 +1,7 @@
 using HotelManager.Web.Components;
 using HotelManager.Web.Data;
 using HotelManager.Web.Features.Billing;
+using HotelManager.Web.Features.Guests;
 using HotelManager.Web.Features.RoomPlanner;
 using HotelManager.Web.Features.Rooms;
 using HotelManager.Web.Infrastructure;
@@ -182,6 +183,7 @@ app.MapHealthChecks("/health");
 app.MapRoomPlannerApi();
 app.MapRoomInventoryApi();
 app.MapBillingApi();
+app.MapGuestApi();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

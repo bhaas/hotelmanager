@@ -1,0 +1,189 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="(detected automatically - adjust if needed)" xml:space="preserve">
+    <value>(automatisch erkannt - bei Bedarf anpassen)</value>
+  </data>
+  <data name="(no room type)" xml:space="preserve">
+    <value>(ohne Zimmertyp)</value>
+  </data>
+  <data name="- not assigned -" xml:space="preserve">
+    <value>- nicht zugeordnet -</value>
+  </data>
+  <data name="- not mapped -" xml:space="preserve">
+    <value>- nicht zugeordnet -</value>
+  </data>
+  <data name="1. Choose file" xml:space="preserve">
+    <value>1. Datei wählen</value>
+  </data>
+  <data name="2. Columns" xml:space="preserve">
+    <value>2. Spalten</value>
+  </data>
+  <data name="3. Room categories" xml:space="preserve">
+    <value>3. Zimmerkategorien</value>
+  </data>
+  <data name="4. Preview" xml:space="preserve">
+    <value>4. Vorschau</value>
+  </data>
+  <data name="Action" xml:space="preserve">
+    <value>Aktion</value>
+  </data>
+  <data name="Address" xml:space="preserve">
+    <value>Adresse</value>
+  </data>
+  <data name="Adults" xml:space="preserve">
+    <value>Erwachsene</value>
+  </data>
+  <data name="Arrival" xml:space="preserve">
+    <value>Anreise</value>
+  </data>
+  <data name="Assign each Booking.com room type to a room category. New bookings get the first free room of that category." xml:space="preserve">
+    <value>Ordnen Sie jedem Booking.com-Zimmertyp eine Zimmerkategorie zu. Neue Buchungen erhalten das erste freie Zimmer dieser Kategorie.</value>
+  </data>
+  <data name="Assign the required columns marked with *." xml:space="preserve">
+    <value>Ordnen Sie die mit * markierten Pflichtspalten zu.</value>
+  </data>
+  <data name="Booked by" xml:space="preserve">
+    <value>Gebucht von</value>
+  </data>
+  <data name="Booking number" xml:space="preserve">
+    <value>Buchungsnummer</value>
+  </data>
+  <data name="Booking.com import" xml:space="preserve">
+    <value>Booking.com-Import</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Stornieren</value>
+  </data>
+  <data name="Check file again" xml:space="preserve">
+    <value>Datei erneut prüfen</value>
+  </data>
+  <data name="Children" xml:space="preserve">
+    <value>Kinder</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="Column {0}" xml:space="preserve">
+    <value>Spalte {0}</value>
+  </data>
+  <data name="Commission" xml:space="preserve">
+    <value>Provision</value>
+  </data>
+  <data name="Country" xml:space="preserve">
+    <value>Land</value>
+  </data>
+  <data name="Create guest profiles" xml:space="preserve">
+    <value>Gästeprofile anlegen</value>
+  </data>
+  <data name="Departure" xml:space="preserve">
+    <value>Abreise</value>
+  </data>
+  <data name="Email" xml:space="preserve">
+    <value>E-Mail</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>Fehler</value>
+  </data>
+  <data name="Guest" xml:space="preserve">
+    <value>Gast</value>
+  </data>
+  <data name="Guest name" xml:space="preserve">
+    <value>Gastname</value>
+  </data>
+  <data name="Import finished: {0} created, {1} updated, {2} cancelled." xml:space="preserve">
+    <value>Import abgeschlossen: {0} angelegt, {1} aktualisiert, {2} storniert.</value>
+  </data>
+  <data name="Import the reservation export from the Booking.com extranet (CSV or Excel). Re-importing a newer export updates changed stays and cancels cancelled bookings." xml:space="preserve">
+    <value>Importieren Sie den Reservierungsexport aus dem Booking.com-Extranet (CSV oder Excel). Ein erneuter Import eines neueren Exports aktualisiert geänderte Aufenthalte und storniert stornierte Buchungen.</value>
+  </data>
+  <data name="Import {0} changes" xml:space="preserve">
+    <value>{0} Änderungen importieren</value>
+  </data>
+  <data name="Importing..." xml:space="preserve">
+    <value>Wird importiert...</value>
+  </data>
+  <data name="In the extranet open Reservations, filter the period and use &quot;Download&quot;. Supported: .csv, .xlsx, .xls (max. 5 MB)." xml:space="preserve">
+    <value>Öffnen Sie im Extranet "Reservierungen", filtern Sie den Zeitraum und nutzen Sie "Herunterladen". Unterstützt: .csv, .xlsx, .xls (max. 5 MB).</value>
+  </data>
+  <data name="Loading..." xml:space="preserve">
+    <value>Wird geladen...</value>
+  </data>
+  <data name="New" xml:space="preserve">
+    <value>Neu</value>
+  </data>
+  <data name="Note" xml:space="preserve">
+    <value>Hinweis</value>
+  </data>
+  <data name="Open room planner" xml:space="preserve">
+    <value>Zimmerplan öffnen</value>
+  </data>
+  <data name="Persons" xml:space="preserve">
+    <value>Personen</value>
+  </data>
+  <data name="Phone" xml:space="preserve">
+    <value>Telefon</value>
+  </data>
+  <data name="Price" xml:space="preserve">
+    <value>Preis</value>
+  </data>
+  <data name="Remarks" xml:space="preserve">
+    <value>Bemerkungen</value>
+  </data>
+  <data name="Result" xml:space="preserve">
+    <value>Ergebnis</value>
+  </data>
+  <data name="Room" xml:space="preserve">
+    <value>Zimmer</value>
+  </data>
+  <data name="Room type" xml:space="preserve">
+    <value>Zimmertyp</value>
+  </data>
+  <data name="Rooms" xml:space="preserve">
+    <value>Zimmer</value>
+  </data>
+  <data name="Row" xml:space="preserve">
+    <value>Zeile</value>
+  </data>
+  <data name="Skip past stays" xml:space="preserve">
+    <value>Vergangene Aufenthalte überspringen</value>
+  </data>
+  <data name="Skipped" xml:space="preserve">
+    <value>Übersprungen</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="The file could not be uploaded. Try again." xml:space="preserve">
+    <value>Die Datei konnte nicht hochgeladen werden. Bitte erneut versuchen.</value>
+  </data>
+  <data name="The file is larger than 5 MB." xml:space="preserve">
+    <value>Die Datei ist größer als 5 MB.</value>
+  </data>
+  <data name="Unchanged" xml:space="preserve">
+    <value>Unverändert</value>
+  </data>
+  <data name="Update" xml:space="preserve">
+    <value>Aktualisieren</value>
+  </data>
+  <data name="{0}: {1} rows" xml:space="preserve">
+    <value>{0}: {1} Zeilen</value>
+  </data>
+  <data name="The file is empty." xml:space="preserve">
+    <value>Die Datei ist leer.</value>
+  </data>
+  <data name="The Excel file could not be read. Save it as .xlsx or export it as CSV and try again." xml:space="preserve">
+    <value>Die Excel-Datei konnte nicht gelesen werden. Speichern Sie sie als .xlsx oder exportieren Sie sie als CSV und versuchen Sie es erneut.</value>
+  </data>
+</root>

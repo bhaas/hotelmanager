@@ -1039,3 +1039,71 @@
     float: right;
     color: #2563eb;
 }
+
+.guest-suggestions {
+    list-style: none;
+    margin: 0.25rem 0 0;
+    padding: 0.2rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.12);
+    max-height: 14rem;
+    overflow-y: auto;
+}
+
+.guest-suggestions button {
+    display: grid;
+    width: 100%;
+    text-align: left;
+    border: 0;
+    background: transparent;
+    border-radius: 6px;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.85rem;
+}
+
+.guest-suggestions button:hover,
+.guest-suggestions button:focus-visible {
+    background: #eff6ff;
+}
+
+.guest-suggestions span {
+    color: #64748b;
+    font-size: 0.75rem;
+}
+
+.guest-profile-link {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    min-height: 1.6rem;
+    font-size: 0.8rem;
+}
+
+.guest-profile-link .btn-link {
+    font-size: 0.8rem;
+    padding: 0 0.25rem;
+}
+
+.reservation-channel {
+    display: inline-block;
+    margin-right: 0.25rem;
+    padding: 0 0.25rem;
+    border-radius: 3px;
+    background: #003580;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.editor-channel-badge {
+    margin-left: 0.4rem;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    background: #003580;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+}

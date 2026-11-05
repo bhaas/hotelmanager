@@ -1,0 +1,417 @@
+@page "/reservations/import"
+@attribute [Authorize(Policy = HotelPolicies.ManageProperty)]
+@rendermode InteractiveServer
+@inject IBookingComImportService Importer
+@inject IStringLocalizer<BookingImport> L
+
+<PageTitle>@L["Booking.com import"]</PageTitle>
+
+<div class="settings-page">
+    <header class="settings-header">
+        <div>
+            <h1>@L["Booking.com import"]</h1>
+            <p class="settings-subtitle">@L["Import the reservation export from the Booking.com extranet (CSV or Excel). Re-importing a newer export updates changed stays and cancels cancelled bookings."]</p>
+        </div>
+    </header>
+
+    @if (errorMessage is not null)
+    {
+        <div class="alert alert-danger alert-dismissible" role="alert">
+            @errorMessage
+            <button type="button" class="btn-close" aria-label="@L["Close"]" @onclick="() => errorMessage = null"></button>
+        </div>
+    }
+
+    <section class="inventory-card">
+        <h2 class="import-step">@L["1. Choose file"]</h2>
+        <p class="drawer-hint">@L["In the extranet open Reservations, filter the period and use \"Download\". Supported: .csv, .xlsx, .xls (max. 5 MB)."]</p>
+        <div class="import-file">
+            <InputFile OnChange="LoadFileAsync" accept=".csv,.xlsx,.xls,.txt" disabled="@busy" />
+            @if (fileName is not null && table is not null)
+            {
+                <span class="drawer-hint">@L["{0}: {1} rows", fileName, table.Rows.Count]</span>
+            }
+        </div>
+    </section>
+
+    @if (table is not null)
+    {
+        <section class="inventory-card">
+            <details open="@mappingIncomplete">
+                <summary class="import-step">@L["2. Columns"] <span class="drawer-hint">@L["(detected automatically - adjust if needed)"]</span></summary>
+                <div class="form-grid import-columns">
+                    @foreach (var field in Enum.GetValues<BookingComField>())
+                    {
+                        var current = columns.TryGetValue(field, out var index) ? index : -1;
+                        <label>
+                            @FieldLabel(field)@(RequiredFields.Contains(field) ? " *" : null)
+                            <select class="form-select form-select-sm" value="@current" @onchange="args => SetColumnAsync(field, args.Value)">
+                                <option value="-1">@L["- not assigned -"]</option>
+                                @for (var column = 0; column < table.Headers.Count; column++)
+                                {
+                                    <option value="@column">@HeaderLabel(column)</option>
+                                }
+                            </select>
+                        </label>
+                    }
+                </div>
+            </details>
+        </section>
+
+        @if (unitTypes.Count > 0)
+        {
+            <section class="inventory-card">
+                <h2 class="import-step">@L["3. Room categories"]</h2>
+                <p class="drawer-hint">@L["Assign each Booking.com room type to a room category. New bookings get the first free room of that category."]</p>
+                <div class="form-grid import-columns">
+                    @foreach (var unitType in unitTypes)
+                    {
+                        var current = unitTypeCategories.GetValueOrDefault(unitType) ?? string.Empty;
+                        <label>
+                            @(unitType.Length == 0 ? L["(no room type)"] : unitType)
+                            <select class="form-select form-select-sm" value="@current" @onchange="args => SetCategoryAsync(unitType, args.Value)">
+                                <option value="">@L["- not mapped -"]</option>
+                                @foreach (var category in categories)
+                                {
+                                    <option value="@category">@category</option>
+                                }
+                            </select>
+                        </label>
+                    }
+                </div>
+            </section>
+        }
+
+        <section class="inventory-card">
+            <div class="import-preview-header">
+                <h2 class="import-step">@(result is null ? L["4. Preview"] : L["Result"])</h2>
+                <div class="import-options">
+                    <label class="guest-check">
+                        <input type="checkbox" checked="@createGuestProfiles" disabled="@(busy || result is not null)"
+                               @onchange="args => SetOptionAsync(() => createGuestProfiles = args.Value is true)" />
+                        @L["Create guest profiles"]
+                    </label>
+                    <label class="guest-check">
+                        <input type="checkbox" checked="@skipPastStays" disabled="@(busy || result is not null)"
+                               @onchange="args => SetOptionAsync(() => skipPastStays = args.Value is true)" />
+                        @L["Skip past stays"]
+                    </label>
+                </div>
+            </div>
+
+            @if (rows is null)
+            {
+                <p><em>@L["Loading..."]</em></p>
+            }
+            else
+            {
+                <div class="import-counts">
+                    @foreach (var action in Enum.GetValues<BookingComImportAction>())
+                    {
+                        var count = rows.Count(row => row.Action == action);
+                        if (count > 0)
+                        {
+                            <span class="import-badge @ActionClass(action)">@ActionLabel(action): @count</span>
+                        }
+                    }
+                </div>
+
+                @if (result is not null)
+                {
+                    <div class="alert alert-success" role="status">
+                        @L["Import finished: {0} created, {1} updated, {2} cancelled.", result.Count(BookingComImportAction.Create), result.Count(BookingComImportAction.Update), result.Count(BookingComImportAction.Cancel)]
+                        <a href="room-planner">@L["Open room planner"]</a>
+                    </div>
+                }
+
+                <div class="table-responsive import-table">
+                    <table class="table table-sm inventory-table">
+                        <thead>
+                            <tr>
+                                <th class="text-end">@L["Row"]</th>
+                                <th>@L["Booking number"]</th>
+                                <th>@L["Guest"]</th>
+                                <th>@L["Arrival"]</th>
+                                <th>@L["Departure"]</th>
+                                <th class="text-end">@L["Persons"]</th>
+                                <th>@L["Room type"]</th>
+                                <th>@L["Action"]</th>
+                                <th>@L["Room"]</th>
+                                <th>@L["Note"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in rows)
+                            {
+                                <tr>
+                                    <td class="text-end">@row.RowNumber</td>
+                                    <td>@row.ExternalReference</td>
+                                    <td>@row.GuestName</td>
+                                    <td>@row.CheckIn?.ToString("d")</td>
+                                    <td>@row.CheckOut?.ToString("d")</td>
+                                    <td class="text-end">@row.Occupancy</td>
+                                    <td>@row.UnitType</td>
+                                    <td><span class="import-badge @ActionClass(row.Action)">@ActionLabel(row.Action)</span></td>
+                                    <td>@row.RoomNumber</td>
+                                    <td class="drawer-hint">@row.Message</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="import-footer">
+                    @if (result is null)
+                    {
+                        <button type="button" class="btn btn-primary" disabled="@(busy || changeCount == 0)" @onclick="ImportAsync">
+                            @(busy ? L["Importing..."] : L["Import {0} changes", changeCount])
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-outline-secondary" disabled="@busy" @onclick="PreviewAsync">@L["Check file again"]</button>
+                    }
+                </div>
+            }
+        </section>
+    }
+</div>
+
+@code {
+    private static readonly BookingComField[] RequiredFields =
+        [BookingComField.BookingNumber, BookingComField.GuestName, BookingComField.CheckIn, BookingComField.CheckOut];
+
+    private string? fileName;
+    private ImportTable? table;
+    private Dictionary<BookingComField, int> columns = [];
+    private Dictionary<string, string?> unitTypeCategories = new(StringComparer.OrdinalIgnoreCase);
+    private IReadOnlyList<string> unitTypes = [];
+    private IReadOnlyList<string> categories = [];
+    private IReadOnlyList<BookingComImportRow>? rows;
+    private BookingComImportResult? result;
+    private int changeCount;
+    private bool createGuestProfiles = true;
+    private bool skipPastStays = true;
+    private bool busy;
+    private bool mappingIncomplete;
+    private string? errorMessage;
+
+    private async Task LoadFileAsync(InputFileChangeEventArgs args)
+    {
+        errorMessage = null;
+        result = null;
+        rows = null;
+        table = null;
+        var file = args.File;
+        if (file.Size > ImportFileReader.MaxFileSize)
+        {
+            errorMessage = L["The file is larger than 5 MB."];
+            return;
+        }
+
+        busy = true;
+        try
+        {
+            using var buffer = new MemoryStream();
+            await using (var stream = file.OpenReadStream(ImportFileReader.MaxFileSize))
+            {
+                await stream.CopyToAsync(buffer);
+            }
+
+            table = ImportFileReader.Read(buffer.ToArray(), file.Name);
+            fileName = file.Name;
+            columns = new Dictionary<BookingComField, int>(Importer.DetectColumns(table.Headers));
+            unitTypeCategories = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+            mappingIncomplete = !HasRequiredColumns();
+            await RefreshCategoriesAsync();
+            await PreviewCoreAsync();
+        }
+        catch (ImportFileException exception)
+        {
+            errorMessage = L[exception.Message];
+        }
+        catch (IOException)
+        {
+            errorMessage = L["The file could not be uploaded. Try again."];
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task SetColumnAsync(BookingComField field, object? value)
+    {
+        if (int.TryParse(value?.ToString(), out var column) && column >= 0)
+        {
+            columns[field] = column;
+        }
+        else
+        {
+            columns.Remove(field);
+        }
+
+        result = null;
+        if (field == BookingComField.UnitType)
+        {
+            await RefreshCategoriesAsync();
+        }
+
+        await PreviewAsync();
+    }
+
+    private async Task SetCategoryAsync(string unitType, object? value)
+    {
+        var category = value?.ToString();
+        unitTypeCategories[unitType] = string.IsNullOrEmpty(category) ? null : category;
+        result = null;
+        await PreviewAsync();
+    }
+
+    private async Task SetOptionAsync(Action apply)
+    {
+        apply();
+        await PreviewAsync();
+    }
+
+    private async Task RefreshCategoriesAsync()
+    {
+        if (table is null)
+        {
+            return;
+        }
+
+        var suggestions = await Importer.SuggestCategoriesAsync(table, columns);
+        foreach (var (unitType, category) in suggestions)
+        {
+            // Keep choices the user already made for unit types that are still present.
+            if (!unitTypeCategories.ContainsKey(unitType))
+            {
+                unitTypeCategories[unitType] = category;
+            }
+        }
+    }
+
+    private async Task PreviewAsync()
+    {
+        errorMessage = null;
+        result = null;
+        busy = true;
+        try
+        {
+            await PreviewCoreAsync();
+        }
+        catch (ImportFileException exception)
+        {
+            errorMessage = L[exception.Message];
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task PreviewCoreAsync()
+    {
+        if (table is null)
+        {
+            return;
+        }
+
+        if (!HasRequiredColumns())
+        {
+            rows = [];
+            changeCount = 0;
+            mappingIncomplete = true;
+            errorMessage = L["Assign the required columns marked with *."];
+            return;
+        }
+
+        var preview = await Importer.PreviewAsync(table, Options());
+        rows = preview.Rows;
+        unitTypes = preview.UnitTypes;
+        categories = preview.Categories;
+        changeCount = preview.ChangeCount;
+    }
+
+    private async Task ImportAsync()
+    {
+        if (table is null)
+        {
+            return;
+        }
+
+        errorMessage = null;
+        busy = true;
+        try
+        {
+            result = await Importer.ImportAsync(table, Options());
+            rows = result.Rows;
+        }
+        catch (ImportFileException exception)
+        {
+            errorMessage = L[exception.Message];
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private BookingComImportOptions Options() =>
+        new(columns, unitTypeCategories, createGuestProfiles, skipPastStays);
+
+    private bool HasRequiredColumns() =>
+        columns.ContainsKey(BookingComField.BookingNumber)
+        && columns.ContainsKey(BookingComField.CheckIn)
+        && columns.ContainsKey(BookingComField.CheckOut)
+        && (columns.ContainsKey(BookingComField.GuestName) || columns.ContainsKey(BookingComField.BookedBy));
+
+    private string HeaderLabel(int column)
+    {
+        var header = table!.Headers[column];
+        return string.IsNullOrWhiteSpace(header) ? L["Column {0}", column + 1] : header;
+    }
+
+    private string FieldLabel(BookingComField field) => field switch
+    {
+        BookingComField.BookingNumber => L["Booking number"],
+        BookingComField.GuestName => L["Guest name"],
+        BookingComField.BookedBy => L["Booked by"],
+        BookingComField.CheckIn => L["Arrival"],
+        BookingComField.CheckOut => L["Departure"],
+        BookingComField.Status => L["Status"],
+        BookingComField.Rooms => L["Rooms"],
+        BookingComField.Persons => L["Persons"],
+        BookingComField.Adults => L["Adults"],
+        BookingComField.Children => L["Children"],
+        BookingComField.UnitType => L["Room type"],
+        BookingComField.Price => L["Price"],
+        BookingComField.Commission => L["Commission"],
+        BookingComField.Remarks => L["Remarks"],
+        BookingComField.Email => L["Email"],
+        BookingComField.Phone => L["Phone"],
+        BookingComField.Country => L["Country"],
+        BookingComField.Address => L["Address"],
+        _ => field.ToString()
+    };
+
+    private string ActionLabel(BookingComImportAction action) => action switch
+    {
+        BookingComImportAction.Create => L["New"],
+        BookingComImportAction.Update => L["Update"],
+        BookingComImportAction.Cancel => L["Cancel"],
+        BookingComImportAction.Unchanged => L["Unchanged"],
+        BookingComImportAction.Skip => L["Skipped"],
+        _ => L["Error"]
+    };
+
+    private static string ActionClass(BookingComImportAction action) => action switch
+    {
+        BookingComImportAction.Create => "is-create",
+        BookingComImportAction.Update => "is-update",
+        BookingComImportAction.Cancel => "is-cancel",
+        BookingComImportAction.Error => "is-error",
+        _ => "is-neutral"
+    };
+}

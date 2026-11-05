@@ -26,6 +26,7 @@ public sealed class RoomPlannerCommandService(
                 excludedReservationId: null,
                 cancellationToken);
             await EnsureRateAndAvailabilityAsync(request, cancellationToken);
+            await EnsureGuestExistsAsync(dbContext, request.GuestId, cancellationToken);
 
             var reservation = new Reservation
             {
@@ -36,7 +37,8 @@ public sealed class RoomPlannerCommandService(
                 CheckOut = request.CheckOut,
                 Occupancy = request.Occupancy,
                 Status = request.Status,
-                Notes = NormalizeNotes(request.Notes)
+                Notes = NormalizeNotes(request.Notes),
+                GuestId = request.GuestId
             };
 
             dbContext.Reservations.Add(reservation);
@@ -64,7 +66,13 @@ public sealed class RoomPlannerCommandService(
                 request.CheckOut,
                 reservationId,
                 cancellationToken);
-            await EnsureRateAndAvailabilityAsync(request, cancellationToken);
+            if (reservation.Source == ReservationSource.Direct)
+            {
+                // Channel bookings were priced and sold by the channel; local rate rules do not apply.
+                await EnsureRateAndAvailabilityAsync(request, cancellationToken);
+            }
+
+            await EnsureGuestExistsAsync(dbContext, request.GuestId, cancellationToken);
 
             reservation.RoomId = request.RoomId;
             reservation.GuestName = request.GuestName.Trim();
@@ -73,6 +81,7 @@ public sealed class RoomPlannerCommandService(
             reservation.Occupancy = request.Occupancy;
             reservation.Status = request.Status;
             reservation.Notes = NormalizeNotes(request.Notes);
+            reservation.GuestId = request.GuestId;
 
             await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -282,6 +291,14 @@ public sealed class RoomPlannerCommandService(
         }
     }
 
+    private async Task EnsureGuestExistsAsync(HotelDbContext dbContext, Guid? guestId, CancellationToken cancellationToken)
+    {
+        if (guestId is { } id && !await dbContext.Guests.AnyAsync(guest => guest.Id == id, cancellationToken))
+        {
+            throw new ReservationValidationException(localizer["Selected guest profile does not exist."]);
+        }
+    }
+
     private static string? NormalizeNotes(string? notes)
     {
         if (string.IsNullOrWhiteSpace(notes))
@@ -301,7 +318,10 @@ public sealed class RoomPlannerCommandService(
             reservation.CheckOut,
             reservation.Occupancy,
             reservation.Status,
-            reservation.Notes);
+            reservation.Notes,
+            reservation.GuestId,
+            reservation.Source,
+            reservation.ExternalReference);
     }
 
     private async Task<T> ExecuteSerializableAsync<T>(

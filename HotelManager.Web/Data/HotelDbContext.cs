@@ -43,6 +43,8 @@ public sealed class HotelDbContext(DbContextOptions<HotelDbContext> options, ITe
 
     public DbSet<Reservation> Reservations => Set<Reservation>();
 
+    public DbSet<Guest> Guests => Set<Guest>();
+
     public DbSet<RoomRateRule> RoomRateRules => Set<RoomRateRule>();
 
     public DbSet<RoomAvailabilityRule> RoomAvailabilityRules => Set<RoomAvailabilityRule>();
@@ -163,12 +165,41 @@ public sealed class HotelDbContext(DbContextOptions<HotelDbContext> options, ITe
             table.HasCheckConstraint("CK_RoomCategories_MaxOccupancyValid", "\"MaxOccupancy\" >= \"StandardOccupancy\"");
         });
 
+        var guestBuilder = modelBuilder.Entity<Guest>();
+        guestBuilder.HasKey(guest => guest.Id);
+        guestBuilder.Property(guest => guest.FirstName).HasMaxLength(80);
+        guestBuilder.Property(guest => guest.LastName).IsRequired().HasMaxLength(120);
+        guestBuilder.Property(guest => guest.Company).HasMaxLength(200);
+        guestBuilder.Property(guest => guest.Email).HasMaxLength(256);
+        guestBuilder.Property(guest => guest.Phone).HasMaxLength(40);
+        guestBuilder.Property(guest => guest.Street).HasMaxLength(200);
+        guestBuilder.Property(guest => guest.PostalCode).HasMaxLength(16);
+        guestBuilder.Property(guest => guest.City).HasMaxLength(100);
+        guestBuilder.Property(guest => guest.Country).HasMaxLength(100);
+        guestBuilder.Property(guest => guest.Nationality).HasMaxLength(100);
+        guestBuilder.Property(guest => guest.Language).HasMaxLength(8);
+        guestBuilder.Property(guest => guest.VatId).HasMaxLength(24);
+        guestBuilder.Property(guest => guest.Notes).HasMaxLength(1000);
+        guestBuilder.Ignore(guest => guest.DisplayName);
+        guestBuilder.Ignore(guest => guest.PostalAddress);
+        guestBuilder.HasIndex(guest => new { guest.HotelId, guest.LastName });
+        guestBuilder.HasIndex(guest => new { guest.HotelId, guest.Email });
+
         var reservationBuilder = modelBuilder.Entity<Reservation>();
         reservationBuilder.HasKey(reservation => reservation.Id);
         reservationBuilder.Property(reservation => reservation.GuestName).IsRequired().HasMaxLength(120);
         reservationBuilder.Property(reservation => reservation.Occupancy).HasDefaultValue(1);
         reservationBuilder.Property(reservation => reservation.Notes).HasMaxLength(500);
         reservationBuilder.Property(reservation => reservation.Status).HasConversion<string>().HasMaxLength(24);
+        reservationBuilder.Property(reservation => reservation.Source).HasConversion<string>().HasMaxLength(24);
+        reservationBuilder.Property(reservation => reservation.ExternalReference).HasMaxLength(40);
+        reservationBuilder.HasIndex(reservation => new { reservation.HotelId, reservation.Source, reservation.ExternalReference })
+            .IsUnique()
+            .HasFilter("\"ExternalReference\" IS NOT NULL");
+        reservationBuilder.HasOne(reservation => reservation.Guest)
+            .WithMany(guest => guest.Reservations)
+            .HasForeignKey(reservation => reservation.GuestId)
+            .OnDelete(DeleteBehavior.SetNull);
         reservationBuilder.HasOne(reservation => reservation.Room)
             .WithMany(room => room.Reservations)
             .HasForeignKey(reservation => reservation.RoomId)

@@ -1,7 +1,9 @@
 using HotelManager.Web.Data;
 using HotelManager.Web.Domain;
 using HotelManager.Web.Features.Billing;
+using HotelManager.Web.Features.Guests;
 using HotelManager.Web.Features.Hotels;
+using HotelManager.Web.Features.Imports;
 using HotelManager.Web.Features.RoomPlanner;
 using HotelManager.Web.Features.Rooms;
 using HotelManager.Web.Features.Users;
@@ -43,6 +45,8 @@ public static class HotelManagerServiceCollectionExtensions
         services.AddScoped<IUserAdministrationService, UserAdministrationService>();
         services.AddScoped<IHotelProfileService, HotelProfileService>();
         services.AddScoped<IPlatformHotelService, PlatformHotelService>();
+        services.AddScoped<IGuestService, GuestService>();
+        services.AddScoped<IBookingComImportService, BookingComImportService>();
         services.AddSingleton<IInvoicePdfService, InvoicePdfService>();
         return services;
     }

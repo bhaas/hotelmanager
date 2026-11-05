@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -41,5 +41,11 @@
   </data>
   <data name="All hotels" xml:space="preserve">
     <value>Alle Hotels</value>
+  </data>
+  <data name="Guests" xml:space="preserve">
+    <value>Gäste</value>
+  </data>
+  <data name="Booking.com import" xml:space="preserve">
+    <value>Booking.com-Import</value>
   </data>
 </root>

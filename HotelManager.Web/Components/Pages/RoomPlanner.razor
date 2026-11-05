@@ -6,6 +6,7 @@
 @inject IRoomPlannerCommandService RoomPlannerCommandService
 @inject IRateAvailabilityService RateAvailabilityService
 @inject IBillingService BillingService
+@inject IGuestService GuestProfiles
 @inject IStringLocalizer<RoomPlanner> L
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
@@ -292,7 +293,13 @@
                                 <span class="reservation-resize-handle reservation-resize-handle-start"
                                       @onclick:stopPropagation="true">
                                 </span>
-                                <span class="reservation-guest">@reservation.GuestName</span>
+                                <span class="reservation-guest">
+                                    @if (reservation.Source == ReservationSource.BookingCom)
+                                    {
+                                        <span class="reservation-channel" title="@L["Booking.com {0}", reservation.ExternalReference ?? string.Empty]">B.</span>
+                                    }
+                                    @reservation.GuestName
+                                </span>
                                 <span class="reservation-dates">@reservation.CheckIn.ToString("dd MMM") - @reservation.CheckOut.ToString("dd MMM")</span>
                                 <span class="reservation-resize-handle reservation-resize-handle-end"
                                       @onclick:stopPropagation="true">
@@ -389,6 +396,10 @@
                             var editorNights = editor.CheckOut.DayNumber - editor.CheckIn.DayNumber;
                             <span> · @(editorNights == 1 ? L["{0} night", editorNights] : L["{0} nights", editorNights])</span>
                         }
+                        @if (editor.Source == ReservationSource.BookingCom)
+                        {
+                            <span class="editor-channel-badge">@L["Booking.com {0}", editor.ExternalReference ?? string.Empty]</span>
+                        }
                     </div>
                 </div>
                 <button type="button"
@@ -411,7 +422,33 @@
                 </div>
                 <div>
                     <label class="form-label" for="editor-guest">@L["Guest / block name"]</label>
-                    <input id="editor-guest" class="form-control" @bind="editor.GuestName" disabled="@isExecutingAction" />
+                    <input id="editor-guest" class="form-control" @bind="editor.GuestName" @bind:event="oninput" @bind:after="SearchGuestProfilesAsync"
+                           autocomplete="off" disabled="@isExecutingAction" />
+                    @if (guestSuggestions.Count > 0)
+                    {
+                        <ul class="guest-suggestions" role="listbox" aria-label="@L["Guest profiles"]">
+                            @foreach (var suggestion in guestSuggestions)
+                            {
+                                <li>
+                                    <button type="button" @onclick="() => SelectGuestProfile(suggestion)">
+                                        <strong>@suggestion.DisplayName</strong>
+                                        <span>@string.Join(" · ", new[] { suggestion.Company, suggestion.Email, suggestion.City }.Where(part => !string.IsNullOrWhiteSpace(part)))</span>
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    <div class="guest-profile-link">
+                        @if (editor.GuestId is { } linkedGuestId)
+                        {
+                            <a href="@($"guests?id={linkedGuestId}")">@L["Profile: {0}", editor.GuestLabel ?? editor.GuestName]</a>
+                            <button type="button" class="btn btn-link btn-sm" disabled="@isExecutingAction" @onclick="UnlinkGuestProfile">@L["Unlink"]</button>
+                        }
+                        else if (!string.IsNullOrWhiteSpace(editor.GuestName) && editor.Status is not (ReservationStatus.Maintenance or ReservationStatus.Blocked))
+                        {
+                            <button type="button" class="btn btn-link btn-sm" disabled="@isExecutingAction" @onclick="CreateGuestProfileAsync">@L["+ Create guest profile"]</button>
+                        }
+                    </div>
                 </div>
                 <div>
                     <label class="form-label" for="editor-checkin">@L["Check-in"]</label>
@@ -1273,7 +1310,8 @@
                 newCheckOut,
                 source.Occupancy,
                 source.Status,
-                source.Notes);
+                source.Notes,
+                source.GuestId);
 
             await RoomPlannerCommandService.UpdateReservationAsync(source.ReservationId, request, CancellationToken.None);
             operationMessage = message;
@@ -1334,6 +1372,7 @@
             Status = ReservationStatus.Confirmed,
             Notes = null
         };
+        guestSuggestions = [];
         rateQuote = null;
         rateQuoteError = null;
         billingSnapshot = null;
@@ -1355,14 +1394,34 @@
             CheckOut = reservation.CheckOut,
             Occupancy = reservation.Occupancy,
             Status = reservation.Status,
-            Notes = reservation.Notes
+            Notes = reservation.Notes,
+            GuestId = reservation.GuestId,
+            Source = reservation.Source,
+            ExternalReference = reservation.ExternalReference
         };
 
+        guestSuggestions = [];
         rateQuote = null;
         rateQuoteError = null;
         billingInvoice.BuyerName = reservation.GuestName;
         billingInvoice.BuyerAddress = string.Empty;
         billingInvoice.BuyerVatId = null;
+        if (reservation.GuestId is { } guestId)
+        {
+            try
+            {
+                var guest = await GuestProfiles.GetAsync(guestId);
+                editor.GuestLabel = guest.DisplayName;
+                billingInvoice.BuyerName = guest.InvoiceName;
+                billingInvoice.BuyerAddress = guest.PostalAddress;
+                billingInvoice.BuyerVatId = guest.VatId;
+            }
+            catch (GuestNotFoundException)
+            {
+                editor.GuestId = null;
+            }
+        }
+
         billingInvoice.DueDate = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(14);
         ClearOperationMessages();
         await RefreshRateQuoteAsync();
@@ -1409,7 +1468,8 @@
             editor.CheckOut,
             editor.Occupancy,
             editor.Status,
-            editor.Notes);
+            editor.Notes,
+            editor.GuestId);
 
         if (editor.ReservationId is null)
         {
@@ -1893,6 +1953,95 @@
         public ReservationStatus Status { get; set; }
 
         public string? Notes { get; set; }
+
+        public Guid? GuestId { get; set; }
+
+        public string? GuestLabel { get; set; }
+
+        public ReservationSource Source { get; set; }
+
+        public string? ExternalReference { get; set; }
+    }
+
+    private IReadOnlyList<GuestSummary> guestSuggestions = [];
+    private int guestSearchVersion;
+
+    private async Task SearchGuestProfilesAsync()
+    {
+        var version = ++guestSearchVersion;
+        var query = editor?.GuestName?.Trim();
+        if (editor is null || editor.GuestId is not null || query is null || query.Length < 2)
+        {
+            guestSuggestions = [];
+            return;
+        }
+
+        var results = await GuestProfiles.SearchAsync(query, includeAnonymized: false, take: 6);
+        // Ignore responses that arrive after a newer keystroke.
+        if (version == guestSearchVersion)
+        {
+            guestSuggestions = results;
+        }
+    }
+
+    private void SelectGuestProfile(GuestSummary guest)
+    {
+        if (editor is null)
+        {
+            return;
+        }
+
+        editor.GuestId = guest.Id;
+        editor.GuestLabel = guest.DisplayName;
+        editor.GuestName = guest.DisplayName;
+        guestSuggestions = [];
+        guestSearchVersion++;
+    }
+
+    private void UnlinkGuestProfile()
+    {
+        if (editor is null)
+        {
+            return;
+        }
+
+        editor.GuestId = null;
+        editor.GuestLabel = null;
+    }
+
+    private async Task CreateGuestProfileAsync()
+    {
+        if (editor is null || string.IsNullOrWhiteSpace(editor.GuestName))
+        {
+            return;
+        }
+
+        try
+        {
+            isExecutingAction = true;
+            var (firstName, lastName) = GuestNames.Split(editor.GuestName);
+            var guest = await GuestProfiles.CreateAsync(new GuestUpsertRequest(firstName, lastName));
+            editor.GuestId = guest.Id;
+            editor.GuestLabel = guest.DisplayName;
+            guestSuggestions = [];
+            guestSearchVersion++;
+            if (editor.ReservationId is { } reservationId)
+            {
+                await GuestProfiles.LinkReservationAsync(reservationId, guest.Id);
+                await ReloadAsync();
+            }
+
+            operationMessage = L["Guest profile {0} created.", guest.DisplayName];
+            operationError = null;
+        }
+        catch (GuestValidationException exception)
+        {
+            operationError = exception.Message;
+        }
+        finally
+        {
+            isExecutingAction = false;
+        }
     }
 
     private sealed class BillingEntryModel

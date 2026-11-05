@@ -1,0 +1,452 @@
+@page "/guests"
+@attribute [Authorize(Policy = HotelPolicies.FrontOffice)]
+@rendermode InteractiveServer
+@inject IGuestService GuestProfiles
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+@inject IStringLocalizer<Guests> L
+
+<PageTitle>@L["Guests"]</PageTitle>
+
+<div class="settings-page">
+    <header class="settings-header">
+        <div>
+            <h1>@L["Guests"]</h1>
+            <p class="settings-subtitle">@L["Guest profiles with contact data, preferences and stay history."]</p>
+        </div>
+        <div class="settings-actions">
+            <input class="form-control guest-search" type="search" placeholder="@L["Search name, company, email, phone..."]"
+                   @bind="search" @bind:event="oninput" @bind:after="SearchAsync" aria-label="@L["Search"]" />
+            <button type="button" class="btn btn-primary" @onclick="OpenNewGuest">@L["+ New guest"]</button>
+        </div>
+    </header>
+
+    @if (pageNotice is not null)
+    {
+        <div class="alert alert-success alert-dismissible" role="status">
+            @pageNotice
+            <button type="button" class="btn-close" aria-label="@L["Close"]" @onclick="() => pageNotice = null"></button>
+        </div>
+    }
+
+    <section class="inventory-card">
+        @if (guests is null)
+        {
+            <p><em>@L["Loading..."]</em></p>
+        }
+        else if (guests.Count == 0)
+        {
+            <p class="drawer-hint">@(string.IsNullOrWhiteSpace(search) ? L["No guest profiles yet."] : L["No guests match your search."])</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover inventory-table">
+                    <thead>
+                        <tr>
+                            <th>@L["Name"]</th>
+                            <th>@L["Company"]</th>
+                            <th>@L["Contact"]</th>
+                            <th>@L["Location"]</th>
+                            <th class="text-end">@L["Stays"]</th>
+                            <th>@L["Last arrival"]</th>
+                            <th>@L["Next arrival"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var guest in guests)
+                        {
+                            <tr class="inventory-row @(guest.IsAnonymized ? "archived" : null) @(selected?.Id == guest.Id ? "selected" : null)" @onclick="() => OpenGuestAsync(guest.Id)">
+                                <td>
+                                    <strong>@(guest.IsAnonymized ? L["Anonymized guest"] : guest.DisplayName)</strong>
+                                    @if (guest.IsVip)
+                                    {
+                                        <span class="vip-badge">VIP</span>
+                                    }
+                                </td>
+                                <td>@guest.Company</td>
+                                <td>
+                                    <div>@guest.Email</div>
+                                    <small class="text-muted">@guest.Phone</small>
+                                </td>
+                                <td>@string.Join(", ", new[] { guest.City, guest.Country }.Where(part => !string.IsNullOrWhiteSpace(part)))</td>
+                                <td class="text-end">@guest.StayCount</td>
+                                <td>@guest.LastArrival?.ToString("d")</td>
+                                <td>@guest.NextArrival?.ToString("d")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            @if (guests.Count >= PageSize)
+            {
+                <p class="drawer-hint">@L["Showing the first {0} guests. Refine the search to find others.", PageSize]</p>
+            }
+        }
+    </section>
+</div>
+
+@if (drawerOpen)
+{
+    <div class="drawer-backdrop" @onclick="CloseDrawer"></div>
+    <aside class="inventory-drawer guest-drawer" role="dialog" aria-modal="true" aria-labelledby="guest-drawer-title" tabindex="-1" @onkeydown="OnDrawerKeyDown">
+        <header class="inventory-drawer-header">
+            <h2 id="guest-drawer-title">
+                @(selected is null ? L["New guest"] : selected.IsAnonymized ? L["Anonymized guest"] : selected.DisplayName)
+            </h2>
+            <button type="button" class="btn-close" aria-label="@L["Close"]" @onclick="CloseDrawer"></button>
+        </header>
+
+        <div class="inventory-drawer-body">
+            @if (drawerError is not null)
+            {
+                <div class="alert alert-danger mb-0" role="alert">@drawerError</div>
+            }
+
+            @if (selected is not null)
+            {
+                <div class="guest-kpis">
+                    <div><span>@L["Stays"]</span><strong>@selected.Stays.Count(stay => stay.Status != ReservationStatus.Cancelled)</strong></div>
+                    <div><span>@L["Nights"]</span><strong>@selected.NightCount</strong></div>
+                    <div><span>@L["Invoiced"]</span><strong>@MoneyFormatter.Format(selected.InvoicedGrossAmount)</strong></div>
+                </div>
+            }
+
+            @if (selected?.IsAnonymized == true)
+            {
+                <p class="drawer-hint">@L["Personal data was erased on {0}. Only the stay history is kept.", selected.AnonymizedAtUtc!.Value.ToLocalTime().ToString("d")]</p>
+            }
+            else
+            {
+                <div class="form-grid">
+                    <label>
+                        <span>@L["First name"]</span>
+                        <input class="form-control" @bind="form.FirstName" maxlength="80" />
+                    </label>
+                    <label>
+                        <span>@L["Last name"] *</span>
+                        <input class="form-control" @bind="form.LastName" @bind:event="oninput" maxlength="120" />
+                    </label>
+                    <label class="span-2">
+                        <span>@L["Company"]</span>
+                        <input class="form-control" @bind="form.Company" maxlength="200" />
+                    </label>
+                    <label>
+                        <span>@L["Email"]</span>
+                        <input class="form-control" type="email" @bind="form.Email" maxlength="256" />
+                    </label>
+                    <label>
+                        <span>@L["Phone"]</span>
+                        <input class="form-control" type="tel" @bind="form.Phone" maxlength="40" />
+                    </label>
+                    <label class="span-2">
+                        <span>@L["Street"]</span>
+                        <input class="form-control" @bind="form.Street" maxlength="200" />
+                    </label>
+                    <label>
+                        <span>@L["Postal code"]</span>
+                        <input class="form-control" @bind="form.PostalCode" maxlength="16" />
+                    </label>
+                    <label>
+                        <span>@L["City"]</span>
+                        <input class="form-control" @bind="form.City" maxlength="100" />
+                    </label>
+                    <label>
+                        <span>@L["Country"]</span>
+                        <input class="form-control" @bind="form.Country" maxlength="100" />
+                    </label>
+                    <label>
+                        <span>@L["Nationality"]</span>
+                        <input class="form-control" @bind="form.Nationality" maxlength="100" />
+                    </label>
+                    <label>
+                        <span>@L["Date of birth"]</span>
+                        <InputDate class="form-control" @bind-Value="form.DateOfBirth" />
+                    </label>
+                    <label>
+                        <span>@L["Language"]</span>
+                        <select class="form-select" @bind="form.Language">
+                            <option value="">-</option>
+                            <option value="de">Deutsch</option>
+                            <option value="en">English</option>
+                            <option value="it">Italiano</option>
+                            <option value="fr">Français</option>
+                            <option value="nl">Nederlands</option>
+                        </select>
+                    </label>
+                    <label class="span-2">
+                        <span>@L["VAT ID (for company invoices)"]</span>
+                        <input class="form-control" @bind="form.VatId" maxlength="24" />
+                    </label>
+                    <label class="span-2">
+                        <span>@L["Notes & preferences"]</span>
+                        <textarea class="form-control" rows="3" @bind="form.Notes" maxlength="1000"></textarea>
+                    </label>
+                    <label class="guest-check">
+                        <input type="checkbox" class="form-check-input" @bind="form.IsVip" />
+                        <span>@L["VIP"]</span>
+                    </label>
+                    <label class="guest-check">
+                        <input type="checkbox" class="form-check-input" @bind="form.MarketingConsent" />
+                        <span>@L["Consents to marketing emails"]</span>
+                    </label>
+                </div>
+            }
+
+            @if (selected is not null)
+            {
+                <section>
+                    <h3 class="guest-section-title">@L["Stay history"]</h3>
+                    @if (selected.Stays.Count == 0)
+                    {
+                        <p class="drawer-hint">@L["No reservations linked yet."]</p>
+                    }
+                    else
+                    {
+                        <table class="table table-sm inventory-table">
+                            <thead>
+                                <tr>
+                                    <th>@L["Stay"]</th>
+                                    <th>@L["Room"]</th>
+                                    <th>@L["Status"]</th>
+                                    <th class="text-end">@L["Invoice"]</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var stay in selected.Stays)
+                                {
+                                    <tr>
+                                        <td>
+                                            @stay.CheckIn.ToString("d") – @stay.CheckOut.ToString("d")
+                                            @if (stay.Source == ReservationSource.BookingCom)
+                                            {
+                                                <span class="channel-badge" title="@stay.ExternalReference">Booking.com</span>
+                                            }
+                                        </td>
+                                        <td>@stay.RoomNumber</td>
+                                        <td>@StatusLabel(stay.Status)</td>
+                                        <td class="text-end">
+                                            @if (stay.InvoiceNumber is not null)
+                                            {
+                                                <span title="@stay.InvoiceNumber">@MoneyFormatter.Format(stay.InvoiceGrossAmount ?? 0m)</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </section>
+
+                <AuthorizeView Policy="@HotelPolicies.ManageProperty">
+                    <section class="danger-zone">
+                        <h3>@L["Privacy (GDPR)"]</h3>
+                        <p>@L["Export all personal data held about this guest, or erase it. Guests with stays are anonymized; issued invoices are kept for the statutory retention period."]</p>
+                        <div class="danger-actions">
+                            <a class="btn btn-sm btn-outline-secondary" href="@($"api/guests/{selected.Id}/export")" download>@L["Export data (JSON)"]</a>
+                            @if (!selected.IsAnonymized)
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-danger" @onclick="EraseAsync" disabled="@busy">@L["Erase personal data"]</button>
+                            }
+                        </div>
+                    </section>
+                </AuthorizeView>
+            }
+        </div>
+
+        @if (selected?.IsAnonymized != true)
+        {
+            <footer class="inventory-drawer-footer">
+                <button type="button" class="btn btn-outline-secondary" @onclick="CloseDrawer">@L["Cancel"]</button>
+                <button type="button" class="btn btn-primary" @onclick="SaveAsync" disabled="@(busy || string.IsNullOrWhiteSpace(form.LastName))">@L["Save"]</button>
+            </footer>
+        }
+    </aside>
+}
+
+@code {
+    private const int PageSize = 200;
+
+    [SupplyParameterFromQuery(Name = "id")]
+    private Guid? GuestIdQuery { get; set; }
+
+    private IReadOnlyList<GuestSummary>? guests;
+    private GuestDetail? selected;
+    private GuestForm form = new();
+    private string search = string.Empty;
+    private bool drawerOpen;
+    private bool busy;
+    private string? drawerError;
+    private string? pageNotice;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await SearchAsync();
+        if (GuestIdQuery is { } id)
+        {
+            await OpenGuestAsync(id);
+        }
+    }
+
+    private async Task SearchAsync()
+    {
+        guests = await GuestProfiles.SearchAsync(search, take: PageSize);
+    }
+
+    private void OpenNewGuest()
+    {
+        selected = null;
+        form = new GuestForm();
+        drawerError = null;
+        drawerOpen = true;
+    }
+
+    private async Task OpenGuestAsync(Guid guestId)
+    {
+        drawerError = null;
+        try
+        {
+            Show(await GuestProfiles.GetAsync(guestId));
+            drawerOpen = true;
+        }
+        catch (GuestNotFoundException exception)
+        {
+            pageNotice = null;
+            drawerError = exception.Message;
+        }
+    }
+
+    private void Show(GuestDetail detail)
+    {
+        selected = detail;
+        form = new GuestForm
+        {
+            FirstName = detail.FirstName,
+            LastName = detail.LastName,
+            Company = detail.Company,
+            Email = detail.Email,
+            Phone = detail.Phone,
+            Street = detail.Street,
+            PostalCode = detail.PostalCode,
+            City = detail.City,
+            Country = detail.Country,
+            Nationality = detail.Nationality,
+            DateOfBirth = detail.DateOfBirth,
+            Language = detail.Language ?? string.Empty,
+            VatId = detail.VatId,
+            Notes = detail.Notes,
+            IsVip = detail.IsVip,
+            MarketingConsent = detail.MarketingConsent
+        };
+    }
+
+    private async Task SaveAsync()
+    {
+        if (busy)
+        {
+            return;
+        }
+
+        busy = true;
+        drawerError = null;
+        try
+        {
+            var request = new GuestUpsertRequest(
+                form.FirstName, form.LastName, form.Company, form.Email, form.Phone, form.Street, form.PostalCode,
+                form.City, form.Country, form.Nationality, form.DateOfBirth, form.Language, form.VatId, form.Notes,
+                form.IsVip, form.MarketingConsent);
+            var saved = selected is null
+                ? await GuestProfiles.CreateAsync(request)
+                : await GuestProfiles.UpdateAsync(selected.Id, request);
+            Show(saved);
+            pageNotice = L["Guest {0} saved.", saved.DisplayName];
+            await SearchAsync();
+        }
+        catch (Exception exception) when (exception is GuestValidationException or GuestNotFoundException)
+        {
+            drawerError = exception.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task EraseAsync()
+    {
+        if (selected is null || busy ||
+            !await JS.InvokeAsync<bool>("confirm", L["Erase the personal data of {0}? This cannot be undone.", selected.DisplayName].Value))
+        {
+            return;
+        }
+
+        busy = true;
+        drawerError = null;
+        try
+        {
+            var result = await GuestProfiles.EraseAsync(selected.Id);
+            pageNotice = result == GuestErasureResult.Deleted
+                ? L["The guest profile was deleted."]
+                : L["The guest was anonymized. Stay history and invoices are kept."];
+            CloseDrawer();
+            await SearchAsync();
+        }
+        catch (Exception exception) when (exception is GuestValidationException or GuestNotFoundException)
+        {
+            drawerError = exception.Message;
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private void CloseDrawer()
+    {
+        drawerOpen = false;
+        selected = null;
+        drawerError = null;
+        if (GuestIdQuery is not null)
+        {
+            GuestIdQuery = null;
+            Navigation.NavigateTo("guests", replace: true);
+        }
+    }
+
+    private void OnDrawerKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape")
+        {
+            CloseDrawer();
+        }
+    }
+
+    private string StatusLabel(ReservationStatus status) => status switch
+    {
+        ReservationStatus.Confirmed => L["Confirmed"],
+        ReservationStatus.CheckedIn => L["In house"],
+        ReservationStatus.CheckedOut => L["Checked out"],
+        ReservationStatus.Cancelled => L["Cancelled"],
+        _ => status.ToString()
+    };
+
+    private sealed class GuestForm
+    {
+        public string? FirstName { get; set; }
+        public string LastName { get; set; } = string.Empty;
+        public string? Company { get; set; }
+        public string? Email { get; set; }
+        public string? Phone { get; set; }
+        public string? Street { get; set; }
+        public string? PostalCode { get; set; }
+        public string? City { get; set; }
+        public string? Country { get; set; }
+        public string? Nationality { get; set; }
+        public DateOnly? DateOfBirth { get; set; }
+        public string Language { get; set; } = string.Empty;
+        public string? VatId { get; set; }
+        public string? Notes { get; set; }
+        public bool IsVip { get; set; }
+        public bool MarketingConsent { get; set; }
+    }
+}

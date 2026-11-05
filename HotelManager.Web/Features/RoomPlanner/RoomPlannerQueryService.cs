@@ -38,7 +38,10 @@ public sealed class RoomPlannerQueryService(IDbContextFactory<HotelDbContext> db
                         reservation.CheckOut,
                         reservation.Occupancy,
                         reservation.Status,
-                        reservation.Notes))
+                        reservation.Notes,
+                        reservation.GuestId,
+                        reservation.Source,
+                        reservation.ExternalReference))
                     .ToList(),
                 room.HousekeepingStatus,
                 room.Features,

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -395,5 +395,23 @@
   </data>
   <data name="max. {0}" xml:space="preserve">
     <value>max. {0}</value>
+  </data>
+  <data name="Booking.com {0}" xml:space="preserve">
+    <value>Booking.com {0}</value>
+  </data>
+  <data name="Guest profiles" xml:space="preserve">
+    <value>Gästeprofile</value>
+  </data>
+  <data name="Profile: {0}" xml:space="preserve">
+    <value>Profil: {0}</value>
+  </data>
+  <data name="Unlink" xml:space="preserve">
+    <value>Verknüpfung lösen</value>
+  </data>
+  <data name="+ Create guest profile" xml:space="preserve">
+    <value>+ Gästeprofil anlegen</value>
+  </data>
+  <data name="Guest profile {0} created." xml:space="preserve">
+    <value>Gästeprofil {0} angelegt.</value>
   </data>
 </root>

@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Assign the required columns: {0}." xml:space="preserve">
+    <value>Ordnen Sie die Pflichtspalten zu: {0}.</value>
+  </data>
+  <data name="Booking number is too long." xml:space="preserve">
+    <value>Die Buchungsnummer ist zu lang.</value>
+  </data>
+  <data name="Cancelled in HotelManager; not reactivated." xml:space="preserve">
+    <value>In HotelManager storniert; nicht reaktiviert.</value>
+  </data>
+  <data name="Cancelled on Booking.com, but the guest has already checked in. Check manually." xml:space="preserve">
+    <value>Auf Booking.com storniert, aber der Gast ist bereits eingecheckt. Bitte manuell prüfen.</value>
+  </data>
+  <data name="Cancelled on Booking.com; not in HotelManager." xml:space="preserve">
+    <value>Auf Booking.com storniert; nicht in HotelManager vorhanden.</value>
+  </data>
+  <data name="Check-in or check-out date is not readable." xml:space="preserve">
+    <value>An- oder Abreisedatum ist nicht lesbar.</value>
+  </data>
+  <data name="Check-out must be after check-in." xml:space="preserve">
+    <value>Die Abreise muss nach der Anreise liegen.</value>
+  </data>
+  <data name="Choose a room category for bookings without unit type." xml:space="preserve">
+    <value>Wählen Sie eine Zimmerkategorie für Buchungen ohne Zimmertyp.</value>
+  </data>
+  <data name="Choose a room category for unit type &quot;{0}&quot;." xml:space="preserve">
+    <value>Wählen Sie eine Zimmerkategorie für den Zimmertyp "{0}".</value>
+  </data>
+  <data name="Commission: {0}" xml:space="preserve">
+    <value>Provision: {0}</value>
+  </data>
+  <data name="Guest has already checked in." xml:space="preserve">
+    <value>Der Gast ist bereits eingecheckt.</value>
+  </data>
+  <data name="Guest name is missing." xml:space="preserve">
+    <value>Der Gastname fehlt.</value>
+  </data>
+  <data name="Moved to room {0}." xml:space="preserve">
+    <value>In Zimmer {0} verlegt.</value>
+  </data>
+  <data name="No free room in category {0} for the new dates." xml:space="preserve">
+    <value>Kein freies Zimmer in Kategorie {0} für die neuen Daten.</value>
+  </data>
+  <data name="No free room in category {0}." xml:space="preserve">
+    <value>Kein freies Zimmer in Kategorie {0}.</value>
+  </data>
+  <data name="No-show." xml:space="preserve">
+    <value>No-Show.</value>
+  </data>
+  <data name="Price: {0}" xml:space="preserve">
+    <value>Preis: {0}</value>
+  </data>
+  <data name="Stay is in the past." xml:space="preserve">
+    <value>Der Aufenthalt liegt in der Vergangenheit.</value>
+  </data>
+  <data name="The reservation could not be saved. Try the import again." xml:space="preserve">
+    <value>Die Reservierung konnte nicht gespeichert werden. Bitte den Import wiederholen.</value>
+  </data>
+</root>

@@ -1,4 +1,4 @@
-﻿@inject IStringLocalizer<NavMenu> L
+@inject IStringLocalizer<NavMenu> L
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
@@ -20,6 +20,20 @@
             <div class="nav-item px-3">
                 <NavLink class="nav-link" href="room-planner">
                     <span class="bi bi-calendar-week-nav-menu" aria-hidden="true"></span> @L["Room Planner"]
+                </NavLink>
+            </div>
+
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="guests">
+                    <span class="bi bi-person-nav-menu" aria-hidden="true"></span> @L["Guests"]
+                </NavLink>
+            </div>
+        </AuthorizeView>
+
+        <AuthorizeView Policy="@HotelPolicies.ManageProperty">
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="reservations/import">
+                    <span class="bi bi-import-nav-menu" aria-hidden="true"></span> @L["Booking.com import"]
                 </NavLink>
             </div>
         </AuthorizeView>

@@ -388,6 +388,95 @@ namespace HotelManager.Web.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HotelManager.Web.Domain.Guest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("AnonymizedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Company")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Country")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly?>("DateOfBirth")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("FirstName")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<Guid>("HotelId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsVip")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Language")
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<bool>("MarketingConsent")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Nationality")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("Street")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset>("UpdatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("VatId")
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HotelId", "Email");
+
+                    b.HasIndex("HotelId", "LastName");
+
+                    b.ToTable("Guests");
+                });
+
             modelBuilder.Entity("HotelManager.Web.Domain.Hotel", b =>
                 {
                     b.Property<Guid>("Id")
@@ -494,6 +583,13 @@ namespace HotelManager.Web.Data.Migrations
                     b.Property<DateOnly>("CheckOut")
                         .HasColumnType("date");
 
+                    b.Property<string>("ExternalReference")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<Guid?>("GuestId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("GuestName")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -514,6 +610,11 @@ namespace HotelManager.Web.Data.Migrations
                     b.Property<Guid>("RoomId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(24)
@@ -521,9 +622,13 @@ namespace HotelManager.Web.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("HotelId");
+                    b.HasIndex("GuestId");
 
                     b.HasIndex("RoomId");
+
+                    b.HasIndex("HotelId", "Source", "ExternalReference")
+                        .IsUnique()
+                        .HasFilter("\"ExternalReference\" IS NOT NULL");
 
                     b.ToTable("Reservations", t =>
                         {
@@ -984,6 +1089,15 @@ namespace HotelManager.Web.Data.Migrations
                     b.Navigation("Reservation");
                 });
 
+            modelBuilder.Entity("HotelManager.Web.Domain.Guest", b =>
+                {
+                    b.HasOne("HotelManager.Web.Domain.Hotel", null)
+                        .WithMany()
+                        .HasForeignKey("HotelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("HotelManager.Web.Domain.HotelMembership", b =>
                 {
                     b.HasOne("HotelManager.Web.Domain.Hotel", "Hotel")
@@ -1005,6 +1119,11 @@ namespace HotelManager.Web.Data.Migrations
 
             modelBuilder.Entity("HotelManager.Web.Domain.Reservation", b =>
                 {
+                    b.HasOne("HotelManager.Web.Domain.Guest", "Guest")
+                        .WithMany("Reservations")
+                        .HasForeignKey("GuestId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("HotelManager.Web.Domain.Hotel", null)
                         .WithMany()
                         .HasForeignKey("HotelId")
@@ -1016,6 +1135,8 @@ namespace HotelManager.Web.Data.Migrations
                         .HasForeignKey("RoomId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Guest");
 
                     b.Navigation("Room");
                 });
@@ -1122,6 +1243,11 @@ namespace HotelManager.Web.Data.Migrations
             modelBuilder.Entity("HotelManager.Web.Domain.Billing.InvoiceDocument", b =>
                 {
                     b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("HotelManager.Web.Domain.Guest", b =>
+                {
+                    b.Navigation("Reservations");
                 });
 
             modelBuilder.Entity("HotelManager.Web.Domain.Reservation", b =>

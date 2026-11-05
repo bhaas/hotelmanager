@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -62,5 +62,8 @@
   </data>
   <data name="Room {0} is archived and cannot be booked." xml:space="preserve">
     <value>Zimmer {0} ist archiviert und kann nicht gebucht werden.</value>
+  </data>
+  <data name="Selected guest profile does not exist." xml:space="preserve">
+    <value>Das ausgewählte Gästeprofil existiert nicht.</value>
   </data>
 </root>

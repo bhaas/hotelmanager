@@ -22,6 +22,15 @@ public sealed class Reservation : ITenantEntity
 
     public string? Notes { get; set; }
 
+    public Guid? GuestId { get; set; }
+
+    public Guest? Guest { get; set; }
+
+    public ReservationSource Source { get; set; } = ReservationSource.Direct;
+
+    /// <summary>Booking number of the channel (e.g. Booking.com), unique per source; used to re-import idempotently.</summary>
+    public string? ExternalReference { get; set; }
+
     public ICollection<Billing.FolioEntry> FolioEntries { get; set; } = new List<Billing.FolioEntry>();
 
     public ICollection<Billing.PaymentTransaction> Payments { get; set; } = new List<Billing.PaymentTransaction>();
