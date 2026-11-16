@@ -17,6 +17,9 @@
         <div class="settings-actions">
             <input class="form-control guest-search" type="search" placeholder="@L["Search name, company, email, phone..."]"
                    @bind="search" @bind:event="oninput" @bind:after="SearchAsync" aria-label="@L["Search"]" />
+            <AuthorizeView Policy="@HotelPolicies.ManageProperty">
+                <a class="btn btn-outline-secondary" href="guests/import">@L["Import from feratel"]</a>
+            </AuthorizeView>
             <button type="button" class="btn btn-primary" @onclick="OpenNewGuest">@L["+ New guest"]</button>
         </div>
     </header>
@@ -167,11 +170,14 @@
                         <span>@L["Language"]</span>
                         <select class="form-select" @bind="form.Language">
                             <option value="">-</option>
-                            <option value="de">Deutsch</option>
-                            <option value="en">English</option>
-                            <option value="it">Italiano</option>
-                            <option value="fr">Français</option>
-                            <option value="nl">Nederlands</option>
+                            @foreach (var (languageCode, languageName) in GuestLanguages.All)
+                            {
+                                <option value="@languageCode">@languageName</option>
+                            }
+                            @if (form.Language.Length > 0 && GuestLanguages.All.All(language => language.Code != form.Language))
+                            {
+                                <option value="@form.Language">@form.Language</option>
+                            }
                         </select>
                     </label>
                     <label class="span-2">
@@ -191,6 +197,36 @@
                         <span>@L["Consents to marketing emails"]</span>
                     </label>
                 </div>
+
+                <details class="guest-registration" open="@HasRegistrationData">
+                    <summary class="guest-section-title">@L["Registration & marketing"]</summary>
+                    <div class="form-grid">
+                        <label class="span-2">
+                            <span>@L["Travel document (number, date, authority)"]</span>
+                            <input class="form-control" @bind="form.TravelDocument" maxlength="200" />
+                        </label>
+                        <label>
+                            <span>@L["Licence plate"]</span>
+                            <input class="form-control" @bind="form.LicensePlate" maxlength="20" />
+                        </label>
+                        <label>
+                            <span>@L["Arrival by"]</span>
+                            <input class="form-control" @bind="form.ArrivalMode" maxlength="50" />
+                        </label>
+                        <label>
+                            <span>@L["Travel purpose"]</span>
+                            <input class="form-control" @bind="form.TravelPurpose" maxlength="100" />
+                        </label>
+                        <label>
+                            <span>@L["Found us via"]</span>
+                            <input class="form-control" @bind="form.ReferralSource" maxlength="100" />
+                        </label>
+                        <label class="span-2">
+                            <span>@L["Interests"]</span>
+                            <input class="form-control" @bind="form.Interests" maxlength="300" />
+                        </label>
+                    </div>
+                </details>
             }
 
             @if (selected is not null)
@@ -336,9 +372,20 @@
             VatId = detail.VatId,
             Notes = detail.Notes,
             IsVip = detail.IsVip,
-            MarketingConsent = detail.MarketingConsent
+            MarketingConsent = detail.MarketingConsent,
+            TravelDocument = detail.TravelDocument,
+            LicensePlate = detail.LicensePlate,
+            TravelPurpose = detail.TravelPurpose,
+            ReferralSource = detail.ReferralSource,
+            ArrivalMode = detail.ArrivalMode,
+            Interests = detail.Interests
         };
     }
+
+    private bool HasRegistrationData => new[]
+    {
+        form.TravelDocument, form.LicensePlate, form.TravelPurpose, form.ReferralSource, form.ArrivalMode, form.Interests
+    }.Any(value => !string.IsNullOrWhiteSpace(value));
 
     private async Task SaveAsync()
     {
@@ -354,7 +401,8 @@
             var request = new GuestUpsertRequest(
                 form.FirstName, form.LastName, form.Company, form.Email, form.Phone, form.Street, form.PostalCode,
                 form.City, form.Country, form.Nationality, form.DateOfBirth, form.Language, form.VatId, form.Notes,
-                form.IsVip, form.MarketingConsent);
+                form.IsVip, form.MarketingConsent, form.TravelDocument, form.LicensePlate, form.TravelPurpose,
+                form.ReferralSource, form.ArrivalMode, form.Interests);
             var saved = selected is null
                 ? await GuestProfiles.CreateAsync(request)
                 : await GuestProfiles.UpdateAsync(selected.Id, request);
@@ -448,5 +496,11 @@
         public string? Notes { get; set; }
         public bool IsVip { get; set; }
         public bool MarketingConsent { get; set; }
+        public string? TravelDocument { get; set; }
+        public string? LicensePlate { get; set; }
+        public string? TravelPurpose { get; set; }
+        public string? ReferralSource { get; set; }
+        public string? ArrivalMode { get; set; }
+        public string? Interests { get; set; }
     }
 }

@@ -35,6 +35,12 @@ public sealed record GuestDetail(
     string? Notes,
     bool IsVip,
     bool MarketingConsent,
+    string? TravelDocument,
+    string? LicensePlate,
+    string? TravelPurpose,
+    string? ReferralSource,
+    string? ArrivalMode,
+    string? Interests,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset UpdatedAtUtc,
     DateTimeOffset? AnonymizedAtUtc,
@@ -77,7 +83,13 @@ public sealed record GuestUpsertRequest(
     string? VatId = null,
     string? Notes = null,
     bool IsVip = false,
-    bool MarketingConsent = false);
+    bool MarketingConsent = false,
+    string? TravelDocument = null,
+    string? LicensePlate = null,
+    string? TravelPurpose = null,
+    string? ReferralSource = null,
+    string? ArrivalMode = null,
+    string? Interests = null);
 
 public sealed record GuestExport(string FileName, byte[] Content);
 

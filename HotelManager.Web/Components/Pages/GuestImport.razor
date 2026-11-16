@@ -1,0 +1,247 @@
+@page "/guests/import"
+@attribute [Authorize(Policy = HotelPolicies.ManageProperty)]
+@rendermode InteractiveServer
+@inject IFeratelGuestImportService Importer
+@inject IStringLocalizer<GuestImport> L
+
+<PageTitle>@L["Guest import (feratel)"]</PageTitle>
+
+<div class="settings-page">
+    <header class="settings-header">
+        <div>
+            <h1>@L["Guest import (feratel)"]</h1>
+            <p class="settings-subtitle">@L["Import the guest registrations from feratel Deskline. Guests are recognised by name and date of birth, so you can import the full export again at any time: new guests are added and feratel data updates existing profiles."]</p>
+        </div>
+        <div class="settings-actions">
+            <a class="btn btn-outline-secondary" href="guests">@L["Back to guests"]</a>
+        </div>
+    </header>
+
+    @if (errorMessage is not null)
+    {
+        <div class="alert alert-danger alert-dismissible" role="alert">
+            @errorMessage
+            <button type="button" class="btn-close" aria-label="@L["Close"]" @onclick="() => errorMessage = null"></button>
+        </div>
+    }
+
+    <section class="inventory-card">
+        <h2 class="import-step">@L["1. Choose file"]</h2>
+        <p class="drawer-hint">@L["In feratel Deskline export the guest list with \"Export detailed\" (CSV). Supported: .csv, .xlsx, .xls (max. 5 MB)."]</p>
+        <div class="import-file">
+            <InputFile OnChange="LoadFileAsync" accept=".csv,.xlsx,.xls,.txt" disabled="@busy" />
+            @if (fileName is not null && table is not null)
+            {
+                <span class="drawer-hint">@L["{0}: {1} rows", fileName, table.Rows.Count]</span>
+            }
+        </div>
+    </section>
+
+    @if (table is not null && rows is not null)
+    {
+        <section class="inventory-card">
+            <div class="import-preview-header">
+                <h2 class="import-step">@(imported ? L["Result"] : L["2. Preview"])</h2>
+                <div class="import-options">
+                    <label class="guest-check">
+                        <input type="checkbox" @bind="onlyChanges" />
+                        @L["Show only changes and errors"]
+                    </label>
+                </div>
+            </div>
+
+            <div class="import-counts">
+                @foreach (var action in Enum.GetValues<FeratelGuestImportAction>())
+                {
+                    var count = rows.Count(row => row.Action == action);
+                    if (count > 0)
+                    {
+                        <span class="import-badge @ActionClass(action)">@ActionLabel(action): @count</span>
+                    }
+                }
+            </div>
+
+            @if (imported)
+            {
+                <div class="alert alert-success" role="status">
+                    @L["Import finished: {0} new guests, {1} updated.", Count(FeratelGuestImportAction.Create), Count(FeratelGuestImportAction.Update)]
+                    <a href="guests">@L["Open guests"]</a>
+                </div>
+            }
+
+            <div class="table-responsive import-table">
+                <table class="table table-sm inventory-table">
+                    <thead>
+                        <tr>
+                            <th class="text-end">@L["Row"]</th>
+                            <th>@L["Guest"]</th>
+                            <th>@L["Date of birth"]</th>
+                            <th>@L["City"]</th>
+                            <th>@L["Action"]</th>
+                            <th>@L["Note"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in VisibleRows)
+                        {
+                            <tr>
+                                <td class="text-end">@row.RowNumber</td>
+                                <td>@row.Name</td>
+                                <td>@row.DateOfBirth?.ToString("d")</td>
+                                <td>@row.City</td>
+                                <td><span class="import-badge @ActionClass(row.Action)">@ActionLabel(row.Action)</span></td>
+                                <td class="drawer-hint">@row.Message</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="import-footer">
+                @if (!imported)
+                {
+                    <button type="button" class="btn btn-primary" disabled="@(busy || changeCount == 0)" @onclick="ImportAsync">
+                        @(busy ? L["Importing..."] : L["Import {0} changes", changeCount])
+                    </button>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-outline-secondary" disabled="@busy" @onclick="PreviewAsync">@L["Check file again"]</button>
+                }
+            </div>
+        </section>
+    }
+</div>
+
+@code {
+    private string? fileName;
+    private ImportTable? table;
+    private IReadOnlyList<FeratelGuestImportRow>? rows;
+    private int changeCount;
+    private bool imported;
+    private bool onlyChanges = true;
+    private bool busy;
+    private string? errorMessage;
+
+    private IEnumerable<FeratelGuestImportRow> VisibleRows =>
+        onlyChanges ? rows!.Where(row => row.Action != FeratelGuestImportAction.Unchanged) : rows!;
+
+    private int Count(FeratelGuestImportAction action) => rows?.Count(row => row.Action == action) ?? 0;
+
+    private async Task LoadFileAsync(InputFileChangeEventArgs args)
+    {
+        errorMessage = null;
+        imported = false;
+        rows = null;
+        table = null;
+        var file = args.File;
+        if (file.Size > ImportFileReader.MaxFileSize)
+        {
+            errorMessage = L["The file is larger than 5 MB."];
+            return;
+        }
+
+        busy = true;
+        try
+        {
+            using var buffer = new MemoryStream();
+            await using (var stream = file.OpenReadStream(ImportFileReader.MaxFileSize))
+            {
+                await stream.CopyToAsync(buffer);
+            }
+
+            table = ImportFileReader.Read(buffer.ToArray(), file.Name);
+            fileName = file.Name;
+            await PreviewCoreAsync();
+        }
+        catch (ImportFileException exception)
+        {
+            table = null;
+            errorMessage = L[exception.Message];
+        }
+        catch (IOException)
+        {
+            errorMessage = L["The file could not be uploaded. Try again."];
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task PreviewAsync()
+    {
+        errorMessage = null;
+        busy = true;
+        try
+        {
+            await PreviewCoreAsync();
+        }
+        catch (ImportFileException exception)
+        {
+            errorMessage = L[exception.Message];
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private async Task PreviewCoreAsync()
+    {
+        if (table is null)
+        {
+            return;
+        }
+
+        var preview = await Importer.PreviewAsync(table);
+        imported = false;
+        rows = preview.Rows;
+        changeCount = preview.ChangeCount;
+    }
+
+    private async Task ImportAsync()
+    {
+        if (table is null || busy)
+        {
+            return;
+        }
+
+        errorMessage = null;
+        busy = true;
+        try
+        {
+            var result = await Importer.ImportAsync(table);
+            rows = result.Rows;
+            imported = true;
+        }
+        catch (ImportFileException exception)
+        {
+            errorMessage = L[exception.Message];
+        }
+        catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+        {
+            errorMessage = L["The guests could not be saved. Try the import again."];
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+
+    private string ActionLabel(FeratelGuestImportAction action) => action switch
+    {
+        FeratelGuestImportAction.Create => L["New"],
+        FeratelGuestImportAction.Update => L["Update"],
+        FeratelGuestImportAction.Unchanged => L["Unchanged"],
+        _ => L["Error"]
+    };
+
+    private static string ActionClass(FeratelGuestImportAction action) => action switch
+    {
+        FeratelGuestImportAction.Create => "is-create",
+        FeratelGuestImportAction.Update => "is-update",
+        FeratelGuestImportAction.Error => "is-error",
+        _ => "is-neutral"
+    };
+}

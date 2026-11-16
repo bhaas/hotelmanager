@@ -40,6 +40,21 @@ public sealed class Guest : ITenantEntity
 
     public bool MarketingConsent { get; set; }
 
+    /// <summary>Travel document as registered (number, issue date, authority), required for foreign guests by the Meldegesetz.</summary>
+    public string? TravelDocument { get; set; }
+
+    public string? LicensePlate { get; set; }
+
+    public string? TravelPurpose { get; set; }
+
+    /// <summary>How the guest found the hotel, e.g. "Persönliche Empfehlung".</summary>
+    public string? ReferralSource { get; set; }
+
+    /// <summary>Means of arrival, e.g. "Auto" or "Bahn".</summary>
+    public string? ArrivalMode { get; set; }
+
+    public string? Interests { get; set; }
+
     public DateTimeOffset CreatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
 
     public DateTimeOffset UpdatedAtUtc { get; set; } = DateTimeOffset.UtcNow;

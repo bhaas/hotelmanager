@@ -482,6 +482,10 @@ namespace HotelManager.Web.Data.Migrations
                     b.Property<DateTimeOffset?>("AnonymizedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("ArrivalMode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
                     b.Property<string>("City")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
@@ -511,6 +515,10 @@ namespace HotelManager.Web.Data.Migrations
                     b.Property<Guid>("HotelId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Interests")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
                     b.Property<bool>("IsVip")
                         .HasColumnType("boolean");
 
@@ -522,6 +530,10 @@ namespace HotelManager.Web.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
+
+                    b.Property<string>("LicensePlate")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<bool>("MarketingConsent")
                         .HasColumnType("boolean");
@@ -542,9 +554,21 @@ namespace HotelManager.Web.Data.Migrations
                         .HasMaxLength(16)
                         .HasColumnType("character varying(16)");
 
+                    b.Property<string>("ReferralSource")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
                     b.Property<string>("Street")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<string>("TravelDocument")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("TravelPurpose")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<DateTimeOffset>("UpdatedAtUtc")
                         .HasColumnType("timestamp with time zone");

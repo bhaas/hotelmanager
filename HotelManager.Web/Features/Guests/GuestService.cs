@@ -204,6 +204,12 @@ public sealed class GuestService(
                 guest.Notes,
                 guest.IsVip,
                 guest.MarketingConsent,
+                guest.TravelDocument,
+                guest.LicensePlate,
+                guest.TravelPurpose,
+                guest.ReferralSource,
+                guest.ArrivalMode,
+                guest.Interests,
                 guest.CreatedAtUtc,
                 guest.UpdatedAtUtc,
                 guest.AnonymizedAtUtc
@@ -260,6 +266,12 @@ public sealed class GuestService(
                 guest.Notes = null;
                 guest.IsVip = false;
                 guest.MarketingConsent = false;
+                guest.TravelDocument = null;
+                guest.LicensePlate = null;
+                guest.TravelPurpose = null;
+                guest.ReferralSource = null;
+                guest.ArrivalMode = null;
+                guest.Interests = null;
                 guest.AnonymizedAtUtc = DateTimeOffset.UtcNow;
                 guest.UpdatedAtUtc = guest.AnonymizedAtUtc.Value;
 
@@ -296,6 +308,12 @@ public sealed class GuestService(
         guest.Notes = Optional(request.Notes, 1000);
         guest.IsVip = request.IsVip;
         guest.MarketingConsent = request.MarketingConsent;
+        guest.TravelDocument = Optional(request.TravelDocument, 200);
+        guest.LicensePlate = Optional(request.LicensePlate, 20);
+        guest.TravelPurpose = Optional(request.TravelPurpose, 100);
+        guest.ReferralSource = Optional(request.ReferralSource, 100);
+        guest.ArrivalMode = Optional(request.ArrivalMode, 50);
+        guest.Interests = Optional(request.Interests, 300);
 
         if (request.DateOfBirth is { } birthDate && (birthDate > DateOnly.FromDateTime(DateTime.UtcNow) || birthDate.Year < 1900))
         {
@@ -347,6 +365,12 @@ public sealed class GuestService(
             guest.Notes,
             guest.IsVip,
             guest.MarketingConsent,
+            guest.TravelDocument,
+            guest.LicensePlate,
+            guest.TravelPurpose,
+            guest.ReferralSource,
+            guest.ArrivalMode,
+            guest.Interests,
             guest.CreatedAtUtc,
             guest.UpdatedAtUtc,
             guest.AnonymizedAtUtc,

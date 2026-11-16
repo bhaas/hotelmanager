@@ -187,6 +187,12 @@ public sealed class HotelDbContext(DbContextOptions<HotelDbContext> options, ITe
         guestBuilder.Property(guest => guest.Language).HasMaxLength(8);
         guestBuilder.Property(guest => guest.VatId).HasMaxLength(24);
         guestBuilder.Property(guest => guest.Notes).HasMaxLength(1000);
+        guestBuilder.Property(guest => guest.TravelDocument).HasMaxLength(200);
+        guestBuilder.Property(guest => guest.LicensePlate).HasMaxLength(20);
+        guestBuilder.Property(guest => guest.TravelPurpose).HasMaxLength(100);
+        guestBuilder.Property(guest => guest.ReferralSource).HasMaxLength(100);
+        guestBuilder.Property(guest => guest.ArrivalMode).HasMaxLength(50);
+        guestBuilder.Property(guest => guest.Interests).HasMaxLength(300);
         guestBuilder.Ignore(guest => guest.DisplayName);
         guestBuilder.Ignore(guest => guest.PostalAddress);
         guestBuilder.HasIndex(guest => new { guest.HotelId, guest.LastName });

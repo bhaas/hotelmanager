@@ -48,6 +48,7 @@ public static class HotelManagerServiceCollectionExtensions
         services.AddScoped<IPlatformHotelService, PlatformHotelService>();
         services.AddScoped<IGuestService, GuestService>();
         services.AddScoped<IBookingComImportService, BookingComImportService>();
+        services.AddScoped<IFeratelGuestImportService, FeratelGuestImportService>();
         services.AddSingleton<Beds24Coordinator>();
         services.AddHttpClient<IBeds24Client, Beds24Client>(client =>
         {

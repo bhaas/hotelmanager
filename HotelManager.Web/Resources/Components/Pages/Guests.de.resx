@@ -183,4 +183,28 @@
   <data name="VIP" xml:space="preserve">
     <value>VIP</value>
   </data>
+  <data name="Import from feratel" xml:space="preserve">
+    <value>Aus feratel importieren</value>
+  </data>
+  <data name="Registration &amp; marketing" xml:space="preserve">
+    <value>Meldedaten &amp; Marketing</value>
+  </data>
+  <data name="Travel document (number, date, authority)" xml:space="preserve">
+    <value>Reisedokument (Nr., Datum, Behörde)</value>
+  </data>
+  <data name="Licence plate" xml:space="preserve">
+    <value>Kfz-Kennzeichen</value>
+  </data>
+  <data name="Arrival by" xml:space="preserve">
+    <value>Anreise mit</value>
+  </data>
+  <data name="Travel purpose" xml:space="preserve">
+    <value>Reisemotiv</value>
+  </data>
+  <data name="Found us via" xml:space="preserve">
+    <value>Aufmerksam geworden durch</value>
+  </data>
+  <data name="Interests" xml:space="preserve">
+    <value>Interessen</value>
+  </data>
 </root>
